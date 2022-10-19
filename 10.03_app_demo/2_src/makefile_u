@@ -126,6 +126,7 @@ OBJECTS = $(OBJDIR)/application.o	\
 	$(OBJDIR)/sharedfilesystem/filesystem_rt11.o \
 	$(OBJDIR)/sharedfilesystem/filesystem_xxdp.o \
     $(OBJDIR)/demo_io.o	\
+    $(OBJDIR)/mit_ng.o	\
     $(OBJDIR)/testcontroller.o	\
     $(OBJDIR)/device.o	\
     $(OBJDIR)/qunibusdevice.o	\
@@ -328,6 +329,9 @@ $(OBJDIR)/sharedfilesystem/filesystem_xxdp.o :  $(SHAREDFILESYSTEM_SRC_DIR)/file
 	$(CC) $(CCFLAGS) $< -o $@
 
 $(OBJDIR)/demo_io.o :  $(DEVICE_SRC_DIR)/demo_io.cpp $(DEVICE_SRC_DIR)/demo_io.hpp
+	$(CC) $(CCFLAGS) $< -o $@
+
+$(OBJDIR)/mit_ng.o :  $(DEVICE_SRC_DIR)/mit_ng.cpp $(DEVICE_SRC_DIR)/mit_ng.hpp
 	$(CC) $(CCFLAGS) $< -o $@
 
 $(OBJDIR)/testcontroller.o :  $(DEVICE_SRC_DIR)/testcontroller.cpp $(DEVICE_SRC_DIR)/testcontroller.hpp

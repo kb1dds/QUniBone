@@ -59,6 +59,7 @@
 #include "dl11w.hpp"
 #if defined(UNIBUS)
 #include "m9312.hpp"
+#include "mit_ng.hpp"
 #endif
 #include "cpu.hpp"
 
@@ -181,6 +182,11 @@ void application_c::menu_devices(const char *menu_code, bool with_emulated_CPU) 
 	rk11_c *RK11 = new rk11_c();
 #elif defined(QBUS)
 	rkv11_c *RK11 = new rkv11_c();
+#endif
+
+#if defined(UNIBUS)
+	// MIT custom devices for SITS
+	mit_ng_c *ng = new mit_ng_c();
 #endif
 
 	// Create UDA50
@@ -627,6 +633,9 @@ void application_c::menu_devices(const char *menu_code, bool with_emulated_CPU) 
 
 	m9312->enabled.set(false) ;
 	delete m9312 ;
+
+	ng->enabled.set(false);
+	delete ng;
 #endif
 
 	RX11->enabled.set(false) ;
