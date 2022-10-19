@@ -125,16 +125,16 @@ function link4dir() {
 
 echo "Copying 5_applications$QUNIBONE_PLATFORM_SUFFIX to 5_applications"
 # (recursive move faster, but complicate directory merge)
-cp -f -a $HOME/10.03_app_demo/5_applications$QUNIBONE_PLATFORM_SUFFIX/* $HOME/10.03_app_demo/5_applications
+cp -f -a $PWD/10.03_app_demo/5_applications$QUNIBONE_PLATFORM_SUFFIX/* $PWD/10.03_app_demo/5_applications
 
 # In any case: remove 5_applications_u and 5_applications_q
-rm -f -R  $HOME/10.03_app_demo/5_applications_u
-rm -f -R  $HOME/10.03_app_demo/5_applications_q
+rm -f -R  $PWD/10.03_app_demo/5_applications_u
+rm -f -R  $PWD/10.03_app_demo/5_applications_q
 
 # Generating shortcuts for demo scripts in ~ home directory
-find $HOME/10.03_app_demo/5_applications -name \*.sh -exec ln -sf {} $HOME \;
+find $PWD/10.03_app_demo/5_applications -name \*.sh -exec ln -sf {} $PWD \;
 
-link4dir $HOME/10.03_app_demo/4_deploy
+link4dir $PWD/10.03_app_demo/4_deploy
 
 
 
