@@ -42,7 +42,7 @@ mit_ng_c::mit_ng_c() :
 		qunibusdevice_c()  // super class constructor
 {
 	// static config
-	name.value = "MIT_NG";
+	name.value = "mit_ng";
 	type_name.value = "mit_ng_c";
 	log_label = "ng";
 
@@ -56,7 +56,7 @@ mit_ng_c::mit_ng_c() :
 	csr_reg->active_on_dati = false; // no controller state change
 	csr_reg->active_on_dato = false;
 	csr_reg->reset_value = 0;
-	csr_reg->writable_bits = 0xfffff; // not sure ... TBD
+	csr_reg->writable_bits = 0xffff; // not sure ... TBD
 
 	rel_reg = &(this->registers[1]); // @  base addr + 2
 	strcpy(rel_reg->name, "REL"); // relocation
