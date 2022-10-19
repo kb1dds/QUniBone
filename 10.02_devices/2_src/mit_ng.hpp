@@ -1,6 +1,6 @@
 /* mit_ng.hpp: MIT's custom Knight vector display
 
- Copyright (c) 2018, Joerg Hoppe, Michael Robinson
+ Copyright (c) 2018, Joerg Hoppe
  j_hoppe@t-online.de, www.retrocmp.com
 
  Permission is hereby granted, free of charge, to any person obtaining a
