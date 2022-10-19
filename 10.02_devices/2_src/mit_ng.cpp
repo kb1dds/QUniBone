@@ -36,7 +36,7 @@
 #include "timeout.hpp"
 #include "qunibusadapter.hpp"
 #include "qunibusdevice.hpp"	// definition of class device_c
-#include "mit_nh.hpp"
+#include "mit_ng.hpp"
 
 mit_ng_c::mit_ng_c() :
 		qunibusdevice_c()  // super class constructor
