@@ -57,6 +57,7 @@
 #include "rx11211.hpp"
 #include "uda.hpp"
 #include "dl11w.hpp"
+#include "dh11.hpp"
 #if defined(UNIBUS)
 #include "m9312.hpp"
 #include "mit_ng.hpp"
@@ -184,6 +185,8 @@ void application_c::menu_devices(const char *menu_code, bool with_emulated_CPU) 
 #elif defined(QBUS)
 	rkv11_c *RK11 = new rkv11_c();
 #endif
+
+	dh11_c *DH11 = new dh11_c();  // Only one line for now...
 
 #if defined(UNIBUS)
 	// MIT custom devices for SITS
@@ -642,6 +645,9 @@ void application_c::menu_devices(const char *menu_code, bool with_emulated_CPU) 
 	tv->enabled.set(false);
 	delete tv;
 #endif
+
+	DH11->enabled.set(false);
+	delete DH11;
 
 	RX11->enabled.set(false) ;
 	delete RX11;
