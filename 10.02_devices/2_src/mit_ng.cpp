@@ -46,7 +46,7 @@ mit_ng_c::mit_ng_c() :
 	type_name.value = "mit_ng_c";
 	log_label = "ng";
 
-	set_default_bus_params(0764040, 0270, 5, 0); // base addr, intr-vector, intr level
+	set_default_bus_params(0764040, 1, 0270, 5); // base addr, priority slot, intr-vector, intr level
 
 	// controller has 2 registers
 	register_count = 2;
@@ -67,7 +67,7 @@ mit_ng_c::mit_ng_c() :
 }
 
 mit_ng_c::~mit_ng_c() {
-	// close all gpio value files
+	// cleanup (nothing to do)
 }
 
 bool mit_ng_c::on_param_changed(parameter_c *param) {
