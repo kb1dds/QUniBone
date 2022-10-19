@@ -127,6 +127,7 @@ OBJECTS = $(OBJDIR)/application.o	\
 	$(OBJDIR)/sharedfilesystem/filesystem_xxdp.o \
     $(OBJDIR)/demo_io.o	\
     $(OBJDIR)/mit_ng.o	\
+    $(OBJDIR)/mit_tv.o	\
     $(OBJDIR)/testcontroller.o	\
     $(OBJDIR)/device.o	\
     $(OBJDIR)/qunibusdevice.o	\
@@ -332,6 +333,9 @@ $(OBJDIR)/demo_io.o :  $(DEVICE_SRC_DIR)/demo_io.cpp $(DEVICE_SRC_DIR)/demo_io.h
 	$(CC) $(CCFLAGS) $< -o $@
 
 $(OBJDIR)/mit_ng.o :  $(DEVICE_SRC_DIR)/mit_ng.cpp $(DEVICE_SRC_DIR)/mit_ng.hpp
+	$(CC) $(CCFLAGS) $< -o $@
+
+$(OBJDIR)/mit_tv.o :  $(DEVICE_SRC_DIR)/mit_tv.cpp $(DEVICE_SRC_DIR)/mit_tv.hpp
 	$(CC) $(CCFLAGS) $< -o $@
 
 $(OBJDIR)/testcontroller.o :  $(DEVICE_SRC_DIR)/testcontroller.cpp $(DEVICE_SRC_DIR)/testcontroller.hpp

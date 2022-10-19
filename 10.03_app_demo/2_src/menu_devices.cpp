@@ -60,6 +60,7 @@
 #if defined(UNIBUS)
 #include "m9312.hpp"
 #include "mit_ng.hpp"
+#include "mit_tv.hpp"
 #endif
 #include "cpu.hpp"
 
@@ -187,6 +188,7 @@ void application_c::menu_devices(const char *menu_code, bool with_emulated_CPU) 
 #if defined(UNIBUS)
 	// MIT custom devices for SITS
 	mit_ng_c *ng = new mit_ng_c();
+	mit_tv_c *tv = new mit_tv_c();
 #endif
 
 	// Create UDA50
@@ -636,6 +638,9 @@ void application_c::menu_devices(const char *menu_code, bool with_emulated_CPU) 
 
 	ng->enabled.set(false);
 	delete ng;
+
+	tv->enabled.set(false);
+	delete tv;
 #endif
 
 	RX11->enabled.set(false) ;
