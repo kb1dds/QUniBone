@@ -47,12 +47,11 @@
  * slow moving zero
  */
 
-void application_c::menu_qunibus_signals(const char *menu_code) 
-{
+void application_c::menu_qunibus_signals(const char *menu_code) {
 	mcout_t mcout; // Multi Column OUTput
 	unsigned i;
 	qunibus_signal_c *qusi;
-	bool show_help = true ; // show cmds on first screen, then only on error or request
+	bool show_help = true; // show cmds on first screen, then only on error or request
 	bool show_all = true; // query and show state of all signals
 	bool ready;
 	char *s_choice;
@@ -65,10 +64,8 @@ void application_c::menu_qunibus_signals(const char *menu_code)
 	buslatches.output_enable(true);
 
 	ready = false;
-	
 	while (!ready) {
-		// no menu display when reading script
-		if (show_all && !script_active()) {
+		if (show_all) {
 			show_all = false; // only once
 			// display all known signals
 			mcout_init(&mcout, qunibus_signals.size());
@@ -87,7 +84,7 @@ void application_c::menu_qunibus_signals(const char *menu_code)
 
 		}
 
-		if (show_help && !script_active()) {
+		if (show_help) {
 			show_help = false; // only once
 			printf("\n");
 			printf("*** Stimulate " QUNIBUS_NAME " signals manually.\n");

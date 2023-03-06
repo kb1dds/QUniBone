@@ -36,8 +36,7 @@
 /**********************************************
  * Function and performance test of ARM-PRU1 mailbox
  * */
-void application_c::menu_mailbox(const char *menu_code) 
-{
+void application_c::menu_mailbox(const char *menu_code) {
 	bool show_help = true; // show cmds on first screen, then only on error or request
 	// mcout_t mcout; // Multi Column OUTput
 	bool ready;
@@ -47,8 +46,7 @@ void application_c::menu_mailbox(const char *menu_code)
 	// test PRUs
 	hardware_startup(pru_c::PRUCODE_TEST);
 	while (!ready) {
-		// no menu display when reading script
-		if (show_help && !script_active()) {
+		if (show_help) {
 			show_help = false; // only once
 			printf("\n");
 			printf("*** Test ARM-PRU1 mailbox.\n");

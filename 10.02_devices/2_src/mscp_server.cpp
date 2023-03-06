@@ -39,6 +39,8 @@
 #include <memory>
 #include <queue>
  
+using namespace std;
+
 #include "logger.hpp"
 #include "utils.hpp"
 
@@ -130,7 +132,7 @@ mscp_server::StartPollingThread(void)
         FATAL("Failed to start mscp server thread.  Status 0x%x", status);
     }
 
-    DEBUG_FAST("Polling thread created.");
+    DEBUG("Polling thread created.");
 }
 
 //
@@ -155,7 +157,7 @@ mscp_server::AbortPollingThread(void)
         FATAL("Failed to join polling thread, status 0x%x", status);
     }
 
-    DEBUG_FAST("Polling thread aborted.");  
+    DEBUG("Polling thread aborted.");  
 }
 
 //
@@ -200,24 +202,24 @@ mscp_server::Poll(void)
         //
         // Read all commands from the ring into a queue; then execute them.
         //
-        std::queue<std::shared_ptr<Message>> messages;
+        std::queue<shared_ptr<Message>> messages;
 
         int msgCount = 0;
         while (!_abort_polling && _pollState != PollingState::InitRestart)
         {
             bool error = false;
-            std::shared_ptr<Message> message(_port->GetNextCommand(&error));
+            shared_ptr<Message> message(_port->GetNextCommand(&error));
             if (error)
             {
-                DEBUG_FAST("Error while reading messages, returning to idle state.");
+                DEBUG("Error while reading messages, returning to idle state.");
                 // The lords of STL decreed that queue should have no "clear" method
                 // so we do this garbage instead:
-                messages = std::queue<std::shared_ptr<Message>>(); 
+                messages = std::queue<shared_ptr<Message>>(); 
                 break; 
             }
             if (nullptr == message)
             {
-                DEBUG_FAST("End of command ring; %d messages to be executed.", msgCount);
+                DEBUG("End of command ring; %d messages to be executed.", msgCount);
                 break;
             }
 
@@ -230,7 +232,7 @@ mscp_server::Poll(void)
         //
         while(!messages.empty() && !_abort_polling && _pollState != PollingState::InitRestart)
         {
-            std::shared_ptr<Message> message(messages.front());  
+            shared_ptr<Message> message(messages.front());  
             messages.pop();
 
             //
@@ -242,7 +244,7 @@ mscp_server::Poll(void)
             ControlMessageHeader* header = 
                 reinterpret_cast<ControlMessageHeader*>(message->Message);
 
-            DEBUG_FAST("Message size 0x%x opcode 0x%x rsvd 0x%x mod 0x%x unit %d, ursvd 0x%x, ref 0x%x", 
+            DEBUG("Message size 0x%x opcode 0x%x rsvd 0x%x mod 0x%x unit %d, ursvd 0x%x, ref 0x%x", 
                 message->MessageLength,
                 header->Word3.Command.Opcode,
                 header->Word3.Command.Reserved,
@@ -314,7 +316,7 @@ mscp_server::Poll(void)
                     break;
 
                 default:
-                    DEBUG_FAST("Unimplemented MSCP command 0x%x", header->Word3.Command.Opcode);
+                    DEBUG("Unimplemented MSCP command 0x%x", header->Word3.Command.Opcode);
                     protocolError = true;
                     break;
             }
@@ -325,7 +327,7 @@ mscp_server::Poll(void)
                 cmdStatus = STATUS(Status::INVALID_COMMAND, subCode, 0);
             }
 
-            DEBUG_FAST("cmd 0x%x st 0x%x fl 0x%x", cmdStatus, GET_STATUS(cmdStatus), GET_FLAGS(cmdStatus));
+            DEBUG("cmd 0x%x st 0x%x fl 0x%x", cmdStatus, GET_STATUS(cmdStatus), GET_FLAGS(cmdStatus));
 
             //
             // Set the endcode and status bits
@@ -355,10 +357,10 @@ mscp_server::Poll(void)
                 // thereafter it supplies one credit for every response
                 // packet sent.
                 // 
-                uint8_t grantedCredits = std::min(_credits, static_cast<uint8_t>(MAX_CREDITS));
+                uint8_t grantedCredits = min(_credits, static_cast<uint8_t>(MAX_CREDITS));
                 _credits -= grantedCredits;
                 message->Word1.Info.Credits = grantedCredits + 1;
-                DEBUG_FAST("granted credits %d", grantedCredits + 1);
+                DEBUG("granted credits %d", grantedCredits + 1);
             }
             else
             {
@@ -387,7 +389,7 @@ mscp_server::Poll(void)
         pthread_mutex_lock(&polling_mutex); 
         if (_pollState == PollingState::InitRestart)
         {
-            DEBUG_FAST("MSCP Polling thread reset.");
+            DEBUG("MSCP Polling thread reset.");
             // Signal the Reset call that we're done so it can return
             // and release the Host.
             _pollState = PollingState::Wait;
@@ -404,7 +406,7 @@ mscp_server::Poll(void)
         pthread_mutex_unlock(&polling_mutex);
         
     }
-    DEBUG_FAST("MSCP Polling thread exiting."); 
+    DEBUG("MSCP Polling thread exiting."); 
 }
 
 //
@@ -438,7 +440,7 @@ mscp_server::Available(
     // Message has no message-specific data.
     // Just set the specified drive as Available if appropriate.
     // We do nothing with the spin-down modifier.
-    DEBUG_FAST("MSCP AVAILABLE");
+    DEBUG("MSCP AVAILABLE");
 
     mscp_drive_c* drive = GetDrive(unitNumber);
 
@@ -455,7 +457,7 @@ mscp_server::Available(
 
 uint32_t
 mscp_server::Access(
-    std::shared_ptr<Message> message,
+    shared_ptr<Message> message,
     uint16_t unitNumber)
 {
     INFO("MSCP ACCESS");
@@ -469,7 +471,7 @@ mscp_server::Access(
 
 uint32_t
 mscp_server::CompareHostData(
-    std::shared_ptr<Message> message,
+    shared_ptr<Message> message,
     uint16_t unitNumber)
 {
     INFO("MSCP COMPARE HOST DATA");
@@ -484,7 +486,7 @@ uint32_t
 mscp_server::DetermineAccessPaths(
     uint16_t unitNumber)
 {
-    DEBUG_FAST("MSCP DETERMINE ACCESS PATHS drive %d", unitNumber);
+    DEBUG("MSCP DETERMINE ACCESS PATHS drive %d", unitNumber);
 
     // "This command must be treated as a no-op that always succeeds
     //  if the unit is incapable of being connected to more than one
@@ -504,7 +506,7 @@ mscp_server::DetermineAccessPaths(
 
 uint32_t
 mscp_server::Erase(
-    std::shared_ptr<Message> message,
+    shared_ptr<Message> message,
     uint16_t unitNumber,
     uint16_t modifiers)
 {
@@ -517,7 +519,7 @@ mscp_server::Erase(
 
 uint32_t
 mscp_server::GetCommandStatus(
-    std::shared_ptr<Message> message)
+    shared_ptr<Message> message)
 {
     INFO("MSCP GET COMMAND STATUS");
 
@@ -547,7 +549,7 @@ mscp_server::GetCommandStatus(
 
 uint32_t
 mscp_server::GetUnitStatus(
-    std::shared_ptr<Message> message,
+    shared_ptr<Message> message,
     uint16_t unitNumber,
     uint16_t modifiers)
 {
@@ -573,7 +575,7 @@ mscp_server::GetUnitStatus(
     };
     #pragma pack(pop)
 
-    DEBUG_FAST("MSCP GET UNIT STATUS drive %d", unitNumber);
+    DEBUG("MSCP GET UNIT STATUS drive %d", unitNumber);
 
     // Adjust message length for response
     message->MessageLength = sizeof(GetUnitStatusResponseParameters) +
@@ -652,7 +654,7 @@ mscp_server::GetUnitStatus(
 
 uint32_t
 mscp_server::Online(
-    std::shared_ptr<Message> message,
+    shared_ptr<Message> message,
     uint16_t unitNumber,
     uint16_t modifiers)
 {
@@ -684,7 +686,7 @@ mscp_server::Online(
 
 uint32_t
 mscp_server::Replace(
-    std::shared_ptr<Message> message,
+    shared_ptr<Message> message,
     uint16_t unitNumber)
 {
     INFO("MSCP REPLACE");
@@ -709,7 +711,7 @@ mscp_server::Replace(
 
 uint32_t
 mscp_server::SetControllerCharacteristics(
-    std::shared_ptr<Message> message)
+    shared_ptr<Message> message)
 {
     #pragma pack(push,1)
     struct SetControllerCharacteristicsParameters
@@ -735,7 +737,7 @@ mscp_server::SetControllerCharacteristics(
         reinterpret_cast<SetControllerCharacteristicsParameters*>(
             GetParameterPointer(message));
 
-    DEBUG_FAST("MSCP SET CONTROLLER CHARACTERISTICS");
+    DEBUG("MSCP SET CONTROLLER CHARACTERISTICS");
 
     // Adjust message length for response
     message->MessageLength = sizeof(SetControllerCharacteristicsParameters) +
@@ -772,7 +774,7 @@ mscp_server::SetControllerCharacteristics(
 
 uint32_t
 mscp_server::SetUnitCharacteristics(
-    std::shared_ptr<Message> message,
+    shared_ptr<Message> message,
     uint16_t unitNumber,
     uint16_t modifiers)
 {
@@ -791,7 +793,7 @@ mscp_server::SetUnitCharacteristics(
 
     // TODO: handle Set Write Protect modifier
 
-    DEBUG_FAST("MSCP SET UNIT CHARACTERISTICS drive %d", unitNumber);
+    DEBUG("MSCP SET UNIT CHARACTERISTICS drive %d", unitNumber);
 
     return SetUnitCharacteristicsInternal(message, unitNumber, modifiers, false);
 }
@@ -799,7 +801,7 @@ mscp_server::SetUnitCharacteristics(
 
 uint32_t
 mscp_server::Read(
-    std::shared_ptr<Message> message,
+    shared_ptr<Message> message,
     uint16_t unitNumber,
     uint16_t modifiers)
 {
@@ -812,7 +814,7 @@ mscp_server::Read(
 
 uint32_t
 mscp_server::Write(
-    std::shared_ptr<Message> message,
+    shared_ptr<Message> message,
     uint16_t unitNumber,
     uint16_t modifiers)
 {
@@ -829,7 +831,7 @@ mscp_server::Write(
 //
 uint32_t
 mscp_server::SetUnitCharacteristicsInternal(
-    std::shared_ptr<Message> message,
+    shared_ptr<Message> message,
     uint16_t unitNumber,
     uint16_t modifiers,
     bool bringOnline)
@@ -900,7 +902,7 @@ mscp_server::SetUnitCharacteristicsInternal(
 uint32_t
 mscp_server::DoDiskTransfer(
     uint16_t operation,
-    std::shared_ptr<Message> message,
+    shared_ptr<Message> message,
     uint16_t unitNumber,
     uint16_t modifiers)
 {
@@ -918,7 +920,7 @@ mscp_server::DoDiskTransfer(
     ReadWriteEraseParameters* params =
         reinterpret_cast<ReadWriteEraseParameters*>(GetParameterPointer(message));
 
-    DEBUG_FAST("MSCP RWE 0x%x unit %d mod 0x%x chan o%o pa o%o count %d lbn %d",
+    DEBUG("MSCP RWE 0x%x unit %d mod 0x%x chan o%o pa o%o count %d lbn %d",
         operation,
         unitNumber,
         modifiers,
@@ -984,7 +986,7 @@ mscp_server::DoDiskTransfer(
         case Opcodes::COMPARE_HOST_DATA:
         {
             // Read the data in from disk, read the data in from memory, and compare.
-            std::unique_ptr<uint8_t> diskBuffer;
+            unique_ptr<uint8_t> diskBuffer;
 
             if (rctAccess)
             {
@@ -995,7 +997,7 @@ mscp_server::DoDiskTransfer(
                 diskBuffer.reset(drive->Read(params->LBN, params->ByteCount));
             }
 
-            std::unique_ptr<uint8_t> memBuffer(_port->DMARead(
+            unique_ptr<uint8_t> memBuffer(_port->DMARead(
                 params->BufferPhysicalAddress & 0x00ffffff,
                 params->ByteCount,
                 params->ByteCount));
@@ -1013,7 +1015,7 @@ mscp_server::DoDiskTransfer(
  
         case Opcodes::ERASE:
         {
-            std::unique_ptr<uint8_t> memBuffer(new uint8_t[params->ByteCount]);
+            unique_ptr<uint8_t> memBuffer(new uint8_t[params->ByteCount]);
             memset(reinterpret_cast<void*>(memBuffer.get()), 0, params->ByteCount);
 
             if (rctAccess)
@@ -1032,7 +1034,7 @@ mscp_server::DoDiskTransfer(
 
         case Opcodes::READ:
         {
-            std::unique_ptr<uint8_t> diskBuffer;
+            unique_ptr<uint8_t> diskBuffer;
         
             if (rctAccess)
             {
@@ -1056,7 +1058,7 @@ mscp_server::DoDiskTransfer(
 
         case Opcodes::WRITE:
         {
-            std::unique_ptr<uint8_t> memBuffer(_port->DMARead(
+            unique_ptr<uint8_t> memBuffer(_port->DMARead(
                 params->BufferPhysicalAddress & 0x00ffffff,
                 params->ByteCount,
                 params->ByteCount));
@@ -1101,7 +1103,7 @@ mscp_server::DoDiskTransfer(
 //
 uint8_t*
 mscp_server::GetParameterPointer(
-    std::shared_ptr<Message> message)
+    shared_ptr<Message> message)
 {
     // We silence a strict aliasing warning here; this is safe (if perhaps not recommended
     // the general case.)
@@ -1138,7 +1140,7 @@ mscp_server::GetDrive(
 void 
 mscp_server::Reset(void)
 {
-    DEBUG_FAST("Aborting polling due to reset.");
+    DEBUG("Aborting polling due to reset.");
 
     pthread_mutex_lock(&polling_mutex);
     if (_pollState != PollingState::Wait)
@@ -1174,7 +1176,7 @@ mscp_server::InitPolling(void)
     // Wake the polling thread if not already awoken.
     //
     pthread_mutex_lock(&polling_mutex);
-        DEBUG_FAST("Waking polling thread.");
+        DEBUG("Waking polling thread.");
         _pollState = PollingState::InitRun;
        	pthread_cond_signal(&polling_cond);
     pthread_mutex_unlock(&polling_mutex);

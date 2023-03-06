@@ -27,6 +27,8 @@
 #ifndef _M9312_HPP_
 #define _M9312_HPP_
 
+using namespace std;
+
 #include "utils.hpp"
 #include "qunibusdevice.hpp"
 #include "memoryimage.hpp"
@@ -96,7 +98,7 @@ public:
 	void on_after_uninstall(void) override;
 
 	// called by qunibusadapter on emulated register access
-	void on_after_register_access(qunibusdevice_register_t *device_reg, uint8_t unibus_control, DATO_ACCESS access)
+	void on_after_register_access(qunibusdevice_register_t *device_reg, uint8_t unibus_control)
 			override;
 
 	void on_power_changed(signal_edge_enum aclo_edge,

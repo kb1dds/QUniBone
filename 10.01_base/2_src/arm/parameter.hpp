@@ -32,13 +32,14 @@
 #include <string>
 #include <vector>
 #include <exception>
+using namespace std;
 
-class bad_parameter: public std::exception {
+class bad_parameter: public exception {
 private:
-	std::string message;
+	string message;
 public:
-	bad_parameter(std::string _message) {
-		message = _message;
+	bad_parameter(string message) {
+		(this->message = message);
 	}
 	const char* what() const noexcept {
 		return message.c_str();
@@ -47,22 +48,22 @@ public:
 
 class bad_parameter_parse: public bad_parameter {
 public:
-	bad_parameter_parse(std::string _message) :
-			bad_parameter(_message) {
+	bad_parameter_parse(string message) :
+			bad_parameter(message) {
 	}
 };
 
 class bad_parameter_check: public bad_parameter {
 public:
-	bad_parameter_check(std::string _message) :
-			bad_parameter(_message) {
+	bad_parameter_check(string message) :
+			bad_parameter(message) {
 	}
 };
 
 class bad_parameter_readonly: public bad_parameter {
 public:
-	bad_parameter_readonly(std::string _message) :
-			bad_parameter(_message) {
+	bad_parameter_readonly(string message) :
+			bad_parameter(message) {
 	}
 };
 
@@ -72,37 +73,37 @@ class parameter_c {
 private:
 public:
 	parameterized_c *parameterized; // link to parent object
-	std::string name;
-	std::string shortname;
+	string name;
+	string shortname;
 	bool readonly;
-	std::string info; // help text
-	std::string unit; // "MB",
-	std::string format; // printf, scanf
+	string info; // help text
+	string unit; // "MB",
+	string format; // printf, scanf
 
 	// parameter_c();
-	parameter_c(parameterized_c *parameterized, std::string name, std::string shortname, bool readonly,
-			std::string unit, std::string format, std::string info);
+	parameter_c(parameterized_c *parameterized, string name, string shortname, bool readonly,
+			string unit, string format, string info);
 	virtual ~parameter_c(); // class with virtual functions should have virtual destructors
 
 	// convert text to value. result: ok?
-	virtual void parse(std::string text);
+	virtual void parse(string text);
 	// convert to text
-	std::string printbuffer;
-	virtual std::string *render(void);
+	string printbuffer;
+	virtual string *render(void);
 };
 
 class parameter_string_c: public parameter_c {
 public:
 	// dynamic state
-	std::string value;
-	std::string new_value;
+	string value;
+	string new_value;
 
-	parameter_string_c(parameterized_c *parameterized, std::string name, std::string shortname,
-			bool readonly, std::string info);
+	parameter_string_c(parameterized_c *parameterized, string name, string shortname,
+			bool readonly, string info);
 	~parameter_string_c();
-	std::string *render(void) override;
-	void parse(std::string text) override;
-	void set(std::string new_value);
+	string *render(void) override;
+	void parse(string text) override;
+	void set(string new_value);
 };
 
 class parameter_bool_c: public parameter_c {
@@ -111,11 +112,11 @@ public:
 	bool value;
 	bool new_value;
 
-	parameter_bool_c(parameterized_c *parameterized, std::string name, std::string shortname,
-			bool readonly, std::string info);
+	parameter_bool_c(parameterized_c *parameterized, string name, string shortname,
+			bool readonly, string info);
 	parameter_bool_c();
-	std::string *render(void) override;
-	void parse(std::string text) override;
+	string *render(void) override;
+	void parse(string text) override;
 	void set(bool new_value);
 };
 
@@ -130,11 +131,11 @@ public:
 	unsigned value;
 	unsigned new_value;
 
-	parameter_unsigned_c(parameterized_c *parameterized, std::string name, std::string shortname,
-			bool readonly, std::string unit, std::string format, std::string info, unsigned bitwidth,
+	parameter_unsigned_c(parameterized_c *parameterized, string name, string shortname,
+			bool readonly, string unit, string format, string info, unsigned bitwidth,
 			unsigned base);
-	std::string *render(void) override;
-	void parse(std::string text) override;
+	string *render(void) override;
+	void parse(string text) override;
 	void set(unsigned new_value);
 };
 
@@ -149,11 +150,11 @@ public:
 	uint64_t value;
 	uint64_t new_value;
 
-	parameter_unsigned64_c(parameterized_c *parameterized, std::string name, std::string shortname,
-			bool readonly, std::string unit, std::string format, std::string info, unsigned bitwidth,
+	parameter_unsigned64_c(parameterized_c *parameterized, string name, string shortname,
+			bool readonly, string unit, string format, string info, unsigned bitwidth,
 			unsigned base);
-	std::string *render(void) override;
-	void parse(std::string text) override;
+	string *render(void) override;
+	void parse(string text) override;
 	void set(uint64_t new_value);
 };
 
@@ -165,23 +166,23 @@ public:
 	double value;
 	double new_value;
 
-	parameter_double_c(parameterized_c *parameterized, std::string name, std::string shortname,
-			bool readonly, std::string unit, std::string format, std::string info);
-	std::string *render(void) override;
-	void parse(std::string text) override;
+	parameter_double_c(parameterized_c *parameterized, string name, string shortname,
+			bool readonly, string unit, string format, string info);
+	string *render(void) override;
+	void parse(string text) override;
 	void set(double new_value);
 };
 
 // objects with parameters are "parameterized" and inherit this.
 class parameterized_c {
 public:
-	std::vector<parameter_c *> parameter;
+	vector<parameter_c *> parameter;
 
 	// register parameter
 	parameter_c *param_add(parameter_c *param);
 
 	// search a parameter
-	parameter_c *param_by_name(std::string name);
+	parameter_c *param_by_name(string name);
 
 	// sort?
 

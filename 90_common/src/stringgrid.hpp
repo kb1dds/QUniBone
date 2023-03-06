@@ -8,14 +8,15 @@
 #include <map>
 #include <vector>
 #include <string>
+using namespace std;
 
 // a col,row index pair
 // first =col, second = row
-typedef std::pair<unsigned, unsigned> stringgrid_index_c;
+typedef pair<unsigned, unsigned> stringgrid_index_c;
 
 class stringgrid_c {
 private:
-	std::map<stringgrid_index_c, std::string> grid;
+	map<stringgrid_index_c, string> grid;
 
 public:
 	unsigned col_count;
@@ -23,13 +24,13 @@ public:
 	stringgrid_c();
 	~stringgrid_c();
 	void clear();
-	void set(unsigned col, unsigned row, std::string s);
-	std::string *get(unsigned col, unsigned row);
+	void set(unsigned col, unsigned row, string s);
+	string *get(unsigned col, unsigned row);
 
-	std::vector<unsigned> columm_widths;
+	vector<unsigned> columm_widths;
 	void calc_columnwidths(void);
-	void print_row(unsigned r, std::string colsep);
-	void print(std::string colsep, char titlesep);
+	void print_row(unsigned r, string colsep);
+	void print(string colsep, char titlesep);
 };
 
 #endif

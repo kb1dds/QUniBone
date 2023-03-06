@@ -50,6 +50,7 @@
 #include "logsource.hpp"
 #include "parameter.hpp"
 
+using namespace std;
 
 namespace devexer {
 
@@ -64,14 +65,14 @@ class blockaddr_c {
 class event_c {
 	timeval timestamp;
 	blockaddr_c blockaddr;
-	std::string info;
+	string info;
 };
 
 // abstract base class for all devicee exerciser
 class devexer_c: public logsource_c, public parameterized_c {
 public:
 	// the class holds a list of pointers to instantiated exercisers
-	static std::list<devexer_c *> myexercisers;
+	static list<devexer_c *> myexercisers;
 // also needed to have a list of threads
 
 	parameter_string_c name = parameter_string_c(this, "name", "name", /*readonly*/
@@ -82,7 +83,7 @@ public:
 			"controller base address in IO page", 18, 8);
 
 	// list of blockaddresses with error info
-	std::vector<event_c> events;
+	vector<event_c> events;
 	devexer_c();
 	~devexer_c();
 };

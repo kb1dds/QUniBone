@@ -12,8 +12,7 @@ echo "		https://github.com/$GITREPO/tree/$GITBRANCH"
 echo "It forces all local files also present on GitHub to latest version,"
 echo "then a full recompile is started."
 echo "This will update/rollback all sources and scripts to latest published state."
-echo "Also script ./cleanup.sh runs and deletes some conflicting stuff... check it out."
-echo "Other files not (anymore) on GitHub are not touched."
+echo "Files not (anymore) on GitHub are not touched."
 read -p "Are you sure [y/*] ? "
 if [[ ! $REPLY =~ ^[Yy]$ ]] ; then
 	echo "OK, abort."
@@ -33,13 +32,8 @@ fi
 tar xzvf $ARCHIVE --strip-components=1
 
 
-# make downloaded scripts executable
-chmod +x *.sh
-
-echo "Deleting now outdated and conflicting files ..."
-./cleanup.sh
-
 # Create simple file links ("4_deploy") for QBone/UniBone variants ("4_deploy_q")
+chmod +x *.sh
 ./qunibone-platform.sh
 
 # Assure all shell scripts are executable

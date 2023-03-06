@@ -52,8 +52,8 @@
 
 //-------------------------------------------------
 
-slu_c::slu_c() : qunibusdevice_c() 
-{
+slu_c::slu_c() :
+		qunibusdevice_c() {
 	set_workers_count(2); // receiver and transmitte have own threads
 
 	//ip_host.value = IP_HOST; // not used
@@ -110,14 +110,12 @@ slu_c::slu_c() : qunibusdevice_c()
 	rs232adapter.rs232 = &rs232;
 }
 
-slu_c::~slu_c() 
-{
+slu_c::~slu_c() {
 }
 
 // called when "enabled" goes true, before registers plugged to QBUS/UNIBUS
 // result false: configuration error, do not install
-bool slu_c::on_before_install(void) 
-{
+bool slu_c::on_before_install(void) {
 	// enable SLU: setup COM serial port
 	// setup for BREAK and parity evaluation
 	rs232adapter.rcv_termios_error_encoding = true;
@@ -134,14 +132,13 @@ bool slu_c::on_before_install(void)
 
 	INFO("Serial port %s opened", serialport.value.c_str());
 	char buff[256];
-	sprintf(buff, "\n\rSerial port %s opened by " QUNIBONE_NAME "\n\r", serialport.value.c_str());
+	sprintf(buff, "\n\rSerial port %s opened\n\r", serialport.value.c_str());
 	rs232.cputs(buff);
 
 	return true;
 }
 
-void slu_c::on_after_uninstall(void) 
-{
+void slu_c::on_after_uninstall(void) {
 	// disable SLU
 	rs232.CloseComport();
 	// unlock serial port and settings
@@ -151,8 +148,7 @@ void slu_c::on_after_uninstall(void)
 	INFO("Serial port %s closed", serialport.value.c_str());
 }
 
-bool slu_c::on_param_changed(parameter_c *param) 
-{
+bool slu_c::on_param_changed(parameter_c *param) {
 	if (param == &priority_slot) {
 		rcvintr_request.set_priority_slot(priority_slot.new_value);
 		// XMT INTR: lower priority => nxt slot, and next vector
@@ -171,14 +167,12 @@ bool slu_c::on_param_changed(parameter_c *param)
 
 // calc static INTR condition level. 
 // Change of that condition calculated by intr_request_c.is_condition_raised()
-bool slu_c::get_rcv_intr_level(void) 
-{
+bool slu_c::get_rcv_intr_level(void) {
 	return rcv_done && rcv_intr_enable;
 }
 
 // Update RCSR and optionally generate INTR
-void slu_c::set_rcsr_dati_value_and_INTR(void) 
-{
+void slu_c::set_rcsr_dati_value_and_INTR(void) {
 	uint16_t val = (rcv_active ? RCSR_RCVR_ACT : 0) | (rcv_done ? RCSR_RCVR_DONE : 0)
 			| (rcv_intr_enable ? RCSR_RCVR_INT_ENB : 0);
 	switch (rcvintr_request.edge_detect(get_rcv_intr_level())) {
@@ -197,8 +191,7 @@ void slu_c::set_rcsr_dati_value_and_INTR(void)
 }
 
 // PDP-11 writes into RCSR
-void slu_c::eval_rcsr_dato_value(void) 
-{
+void slu_c::eval_rcsr_dato_value(void) {
 	uint16_t val = get_register_dato_value(reg_rcsr);
 
 	rcv_intr_enable = val & RCSR_RCVR_INT_ENB ? 1 : 0;
@@ -210,8 +203,7 @@ void slu_c::eval_rcsr_dato_value(void)
 }
 
 // Update RBUF, readonly
-void slu_c::set_rbuf_dati_value(void) 
-{
+void slu_c::set_rbuf_dati_value(void) {
 	uint16_t val = 0;
 	if (error_bits_enable.value) {
 		val = (rcv_or_err ? RBUF_OR_ERR : 0) | (rcv_fr_err ? RBUF_FR_ERR : 0)
@@ -223,14 +215,12 @@ void slu_c::set_rbuf_dati_value(void)
 	set_register_dati_value(reg_rbuf, val, __func__);
 }
 
-bool slu_c::get_xmt_intr_level() 
-{
+bool slu_c::get_xmt_intr_level() {
 	return xmt_ready && xmt_intr_enable;
 }
 
 // Update Transmit Status Register XCSR and optionally generate INTR
-void slu_c::set_xcsr_dati_value_and_INTR(void) 
-{
+void slu_c::set_xcsr_dati_value_and_INTR(void) {
 	uint16_t val = (xmt_ready ? XCSR_XMIT_RDY : 0) | (xmt_intr_enable ? XCSR_XMIT_INT_ENB : 0)
 			| (xmt_maint ? XCSR_MAINT : 0) | (xmt_break ? XCSR_BREAK : 0);
 	switch (xmtintr_request.edge_detect(get_xmt_intr_level())) {
@@ -249,8 +239,7 @@ void slu_c::set_xcsr_dati_value_and_INTR(void)
 
 }
 
-void slu_c::eval_xcsr_dato_value(void) 
-{
+void slu_c::eval_xcsr_dato_value(void) {
 	uint16_t val = get_register_dato_value(reg_xcsr);
 	bool old_break = xmt_break;
 	xmt_intr_enable = val & XCSR_XMIT_INT_ENB ? 1 : 0;
@@ -268,8 +257,7 @@ void slu_c::eval_xcsr_dato_value(void)
 	}
 }
 
-void slu_c::eval_xbuf_dato_value(void) 
-{
+void slu_c::eval_xbuf_dato_value(void) {
 	// transmit data buffer contains only the character in bits 7..0
 	xmt_buffer = get_register_dato_value(reg_xbuf) & 0xff;
 }
@@ -282,9 +270,7 @@ void slu_c::eval_xbuf_dato_value(void)
 // QBUS/UNIBUS DATO cycles let dati_flipflops "flicker" outside of this proc:
 //      do not read back dati_flipflops.
 void slu_c::on_after_register_access(qunibusdevice_register_t *device_reg,
-		uint8_t unibus_control, DATO_ACCESS access) 
-{
-	UNUSED(access);
+		uint8_t unibus_control) {
 
 //	if (unibus_control == QUNIBUS_CYCLE_DATO) // bus write 
 //		set_register_dati_value(device_reg, device_reg->active_dato_flipflops, __func__);
@@ -337,50 +323,35 @@ void slu_c::on_after_register_access(qunibusdevice_register_t *device_reg,
 }
 
 // after QBUS/UNIBUS install, device is reset by DCLO/DCOK cycle
-void slu_c::on_power_changed(signal_edge_enum aclo_edge, signal_edge_enum dclo_edge) 
-{
+void slu_c::on_power_changed(signal_edge_enum aclo_edge, signal_edge_enum dclo_edge) {
 	UNUSED(aclo_edge);
 	UNUSED(dclo_edge);
-	reset() ;
 }
 
-
 // QBUS/UNIBUS INIT: clear all registers
-void slu_c::on_init_changed(void) 
-{
+void slu_c::on_init_changed(void) {
 	// write all registers to "reset-values"
 	if (init_asserted) {
-		reset() ;
+		reset_unibus_registers();
+		rcv_active = 0;
+		rcv_done = 0;
+		rcv_intr_enable = 0;
+		rcv_or_err = 0;
+		rcv_fr_err = 0;
+		rcv_p_err = 0;
+		rcv_buffer = 0;
+		xmt_ready = 1;
+		xmt_intr_enable = 0;
+		xmt_maint = 0;
+		xmt_break = 0;
+		rcvintr_request.edge_detect_reset();
+		xmtintr_request.edge_detect_reset();
+		// INFO("slu_c::on_init()");
 	}
 }
 
-
-// reset controller, after installation, on power and on INIT
-void slu_c::reset(void) 
-{
-	reset_unibus_registers();
-	rcv_active = 0;
-	rcv_done = 0;
-	rcv_intr_enable = 0;
-	rcv_or_err = 0;
-	rcv_fr_err = 0;
-	rcv_p_err = 0;
-	rcv_buffer = 0;
-	xmt_ready = 1;
-	xmt_intr_enable = 0;
-	xmt_maint = 0;
-	xmt_break = 0;
-	rcvintr_request.edge_detect_reset();
-	xmtintr_request.edge_detect_reset();
-	// INFO("slu_c::on_init()");
-}
-
-
-
-
 // background worker.
-void slu_c::worker_rcv(void) 
-{
+void slu_c::worker_rcv(void) {
 	flexi_timeout_c timeout; // if emulated CPU, use emulated timing
 	// timeout_c timeout; 
 	rs232byte_t rcv_byte;
@@ -405,12 +376,12 @@ void slu_c::worker_rcv(void)
 		// at the moments, it is only sent on maintenance loopback xmt
 		/* read serial data, if any */
 		if (rs232adapter.rs232byte_rcv_poll(&rcv_byte)) {
-			DEBUG_FAST("rcv_byte=0x%02x", (unsigned)rcv_byte.c);
+			DEBUG("rcv_byte=0x%02x", (unsigned)rcv_byte.c);
 			pthread_mutex_lock(&on_after_rcv_register_access_mutex); // signal changes atomic against QBUS/UNIBUS accesses
 			rcv_or_err = rcv_fr_err = rcv_p_err = 0;
 			if (rcv_done) { // not yet cleared? overrun!
 				rcv_or_err = 1;
-				DEBUG_FAST("RCV OVERRUN");
+				DEBUG("RCV OVERRUN");
 			}
 			rcv_buffer = rcv_byte.c;
 			if (rcv_byte.format_error)
@@ -424,8 +395,7 @@ void slu_c::worker_rcv(void)
 	}
 }
 
-void slu_c::worker_xmt(void) 
-{
+void slu_c::worker_xmt(void) {
 	timeout_c timeout;
 
 	assert(!pthread_mutex_lock(&on_after_register_access_mutex));
@@ -472,8 +442,7 @@ void slu_c::worker_xmt(void)
 	assert(!pthread_mutex_unlock(&on_after_xmt_register_access_mutex));
 }
 
-void slu_c::worker(unsigned instance) 
-{
+void slu_c::worker(unsigned instance) {
 	// 2 parallel worker() instances: 0 and 1 
 	if (instance == 0)
 		worker_rcv();
@@ -484,7 +453,8 @@ void slu_c::worker(unsigned instance)
 
 //--------------------------------------------------------------------------------------------------
 
-ltc_c::ltc_c() :	qunibusdevice_c()  // super class constructor
+ltc_c::ltc_c() :
+		qunibusdevice_c()  // super class constructor
 {
 
 	// static config
@@ -513,12 +483,10 @@ ltc_c::ltc_c() :	qunibusdevice_c()  // super class constructor
 	line_clock_monitor = 0;
 }
 
-ltc_c::~ltc_c() 
-{
+ltc_c::~ltc_c() {
 }
 
-bool ltc_c::on_param_changed(parameter_c *param) 
-{
+bool ltc_c::on_param_changed(parameter_c *param) {
 	// no own parameter or "enable" logic here
 	if (param == &frequency) {
 		// allow all values, but complain
@@ -538,8 +506,7 @@ bool ltc_c::on_param_changed(parameter_c *param)
 
 // set status register, and optionally generate INTR
 // intr_raise: if inactive->active transition of interrupt condition detected.
-void ltc_c::set_lks_dati_value_and_INTR(bool do_intr) 
-{
+void ltc_c::set_lks_dati_value_and_INTR(bool do_intr) {
 	uint16_t val = (line_clock_monitor ? LKS_INT_MON : 0) | (intr_enable ? LKS_INT_ENB : 0);
 	if (do_intr)
 		// set register atomically with INTR, if INTR not blocked
@@ -551,10 +518,7 @@ void ltc_c::set_lks_dati_value_and_INTR(bool do_intr)
 
 // process DATI/DATO access to one of my "active" registers
 void ltc_c::on_after_register_access(qunibusdevice_register_t *device_reg,
-		uint8_t unibus_control, DATO_ACCESS access) 
-{
-	UNUSED(access);
-
+		uint8_t unibus_control) {
 	pthread_mutex_lock(&on_after_register_access_mutex);
 // not necessary, not harmful?
 	if (unibus_control == QUNIBUS_CYCLE_DATO) // bus write
@@ -564,7 +528,7 @@ void ltc_c::on_after_register_access(qunibusdevice_register_t *device_reg,
 
 	case 0: // LKS
 		if (unibus_control == QUNIBUS_CYCLE_DATO) { // bus write
-//DEBUG_FAST("LKS wrDATO, val = %06o", reg_lks->active_dato_flipflops) ;
+//DEBUG("LKS wrDATO, val = %06o", reg_lks->active_dato_flipflops) ;
 			intr_enable = !!(reg_lks->active_dato_flipflops & LKS_INT_ENB);
 			// schematic: LINE CLOCK MONITOR can only be cleared
 			if ((reg_lks->active_dato_flipflops & LKS_INT_MON) == 0)
@@ -575,7 +539,7 @@ void ltc_c::on_after_register_access(qunibusdevice_register_t *device_reg,
 			}
 			set_lks_dati_value_and_INTR(false); // INTR only by clock, not by LKs access
 		} else
-//DEBUG_FAST("LKS DATI, control=%d, val = %06o = %06o", (int)unibus_control, reg_lks->active_dati_flipflops, device_reg->pru_iopage_register->value ) ;
+//DEBUG("LKS DATI, control=%d, val = %06o = %06o", (int)unibus_control, reg_lks->active_dati_flipflops, device_reg->pru_iopage_register->value ) ;
 			break;
 
 	default:
@@ -586,35 +550,25 @@ void ltc_c::on_after_register_access(qunibusdevice_register_t *device_reg,
 }
 
 // after QBUS/UNIBUS install, device is reset by DCLO/DCOK cycle
-void ltc_c::on_power_changed(signal_edge_enum aclo_edge, signal_edge_enum dclo_edge) 
-{
+void ltc_c::on_power_changed(signal_edge_enum aclo_edge, signal_edge_enum dclo_edge) {
 	UNUSED(aclo_edge);
 	UNUSED(dclo_edge);
-	reset() ;
 }
 
 // QBUS/UNIBUS INIT: clear all registers
-void ltc_c::on_init_changed(void) 
-{
+void ltc_c::on_init_changed(void) {
 	// write all registers to "reset-values"
 	if (init_asserted) {
-		reset() ;
+		reset_unibus_registers();
+		intr_enable = 0;
+		line_clock_monitor = 1;
+		intr_request.edge_detect_reset(); // but edge_detect() not used
+		// initial condition is "not signaled"
+		// INFO("ltc_c::on_init()");
+		world_time_since_init.start_ns(0);
+		clock_ticks_produced_since_init = 0;
 	}
 }
-
-// reset controller, after installation, on power and on INIT
-void ltc_c::reset(void) 
-{
-	reset_unibus_registers();
-	intr_enable = 0;
-	line_clock_monitor = 1;
-	intr_request.edge_detect_reset(); // but edge_detect() not used
-	// initial condition is "not signaled"
-	// INFO("ltc_c::on_init()");
-	world_time_since_init.start_ns(0);
-	clock_ticks_produced_since_init = 0;
-}
-
 
 /*
  Adpative clock period.
@@ -637,8 +591,7 @@ void ltc_c::reset(void)
   This worker may get delayed arbitray amount of time (as every thread), 
   lost edges are compensated.
  */
-void ltc_c::worker(unsigned instance) 
-{
+void ltc_c::worker(unsigned instance) {
 	UNUSED(instance); // only one
 	int64_t global_edge_count = 0;
 	flexi_timeout_c timeout; // world time or driven by CPU cycles
@@ -685,7 +638,7 @@ void ltc_c::worker(unsigned instance)
 
 		// Test average frequency
 		if (global_edge_count && (global_edge_count %  frequency.value) == 0)
-			DEBUG_FAST("LTC: %u secs by INTR", (unsigned)( global_edge_count/ frequency.value) ) ;
+			DEBUG("LTC: %u secs by INTR", (unsigned)( global_edge_count/ frequency.value) ) ;
 		
 		// wait for next clock event
 		timeout.wait_ns(wait_time_ns);
@@ -695,7 +648,7 @@ void ltc_c::worker(unsigned instance)
 		uint64_t edge_period_ns = BILLION / (2 * frequency.value);
 		// overdue_ns: time which signal edge is too late
 		int64_t overdue_ns = (int64_t) global_time.elapsed_ns() - world_next_intr_ns;
-		// DEBUG_FAST does not work on 64 ints
+		// INFO does not work on 64 ints
 		// printf("elapsed [ms] =%u, overdue [us] =%u\n", (unsigned) global_time.elapsed_ms(), (unsigned) overdue_ns/1000) ;
 		// if overdue_ns positive, next signal edge should have occured
 		if (overdue_ns < 0) {

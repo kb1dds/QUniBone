@@ -28,9 +28,9 @@
 
 namespace devexer {
 
-rl_c::rl_c(int _subtype) : 	disk_c() 
-{
-	subtype = _subtype;
+rl_c::rl_c(int subtype) :
+		disk_c() {
+	this->subtype = subtype;
 	assert(subtype == 1 || subtype == 2);
 	name.value = "RL";
 	// type_name.value = "PDP-11/20";
@@ -47,20 +47,17 @@ rl_c::rl_c(int _subtype) : 	disk_c()
 			* (max_blockaddr.cylinder.value + 1) * (max_blockaddr.head.value + 1);
 }
 
-void rl_c::init(unsigned unitnr) 
-{
+void rl_c::init(unsigned unitnr) {
 	UNUSED(unitnr); // todo
 }
 
 // read access
-void rl_c::readtrack(unsigned unitnr, uint8_t *data)
-{
+void rl_c::readtrack(unsigned unitnr, uint8_t *data) {
 	UNUSED(unitnr); // todo
 	UNUSED(data);
 }
 
-void rl_c::readsector(unsigned unitnr, uint8_t *data) 
-{
+void rl_c::readsector(unsigned unitnr, uint8_t *data) {
 	UNUSED(unitnr); // todo
 	UNUSED(data);
 }

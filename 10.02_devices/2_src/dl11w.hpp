@@ -29,6 +29,8 @@
 
 #include <fstream>
 
+using namespace std;
+
 #include "utils.hpp"
 #include "qunibusdevice.hpp"
 #include "parameter.hpp"
@@ -145,7 +147,10 @@ public:
 
 	slu_c();
 	~slu_c();
-	
+
+	bool on_before_install(void) override ;
+	void on_after_uninstall(void) override ;
+
 	//parameter_string_c   ip_host = parameter_string_c(  this, "SLU socket IP host", "host", /*readonly*/ false, "ip hostname");
 	//parameter_unsigned_c ip_port = parameter_unsigned_c(this, "SLU socket IP serialport", "serialport", /*readonly*/ false, "", "%d", "ip serialport", 32, 10);
 	parameter_string_c serialport = parameter_string_c(this, "serialport", "p", /*readonly*/
@@ -164,10 +169,7 @@ public:
 	parameter_bool_c break_enable = parameter_bool_c(this, "break", "b", /*readonly*/false,
 			"Enable BREAK transmission (M7856 SW4-1)");
 
-	void reset(void) ;
-
-	bool on_before_install(void) override ;
-	void on_after_uninstall(void) override ;
+	// 		
 
 	// background worker function
 	void worker(unsigned instance) override;
@@ -175,7 +177,7 @@ public:
 	void worker_xmt(void);
 
 	// called by qunibusadapter on emulated register access
-	void on_after_register_access(qunibusdevice_register_t *device_reg, uint8_t unibus_control, DATO_ACCESS access)
+	void on_after_register_access(qunibusdevice_register_t *device_reg, uint8_t unibus_control)
 			override;
 
 	bool on_param_changed(parameter_c *param) override;  // must implement
@@ -215,12 +217,11 @@ public:
 	parameter_bool_c ltc_enable = parameter_bool_c(this, "LTC input enable", "ltc",/*readonly*/
 	false, "1 = enable update of LKS by LTC Input");
 
-	void reset() ;
 	// background worker function
 	void worker(unsigned instance) override;
 
 	// called by qunibusadapter on emulated register access
-	void on_after_register_access(qunibusdevice_register_t *device_reg, uint8_t unibus_control, DATO_ACCESS access)
+	void on_after_register_access(qunibusdevice_register_t *device_reg, uint8_t unibus_control)
 			override;
 
 	bool on_param_changed(parameter_c *param) override;  // must implement

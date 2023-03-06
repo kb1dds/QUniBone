@@ -67,25 +67,17 @@
  */
 
 // reset input source and internal states
-void inputline_c::init() 
-{
+void inputline_c::init() {
 	// close file, if open
 	if (file)
 		fclose(file);
-	file = nullptr;
+	file = NULL;
 	skip_lines = false ;
 }
 
-bool inputline_c::open_file(char *filename) 
-{
+bool inputline_c::openfile(char *filename) {
 	file = fopen(filename, "r");
-	return (file != nullptr);
-}
-
-
-bool inputline_c::is_file_open() 
-{
-	return (file != nullptr) ;
+	return (file != NULL);
 }
 
 // replace $1..9 with variable[1..9]
@@ -104,9 +96,8 @@ bool inputline_c::is_file_open()
 // .print <text>
 // result: true = internal command processed
 //	false = unkwown
-bool inputline_c::internal_command(char *line) 
-{
-	// endif terminates skipped line range
+bool inputline_c::internal_command(char *line) {
+	// endif termiantes skipped line range
 	if (!strncasecmp(line, ".endif", 6)) {
 		skip_lines = false ;
 		return true ;	
@@ -130,7 +121,7 @@ bool inputline_c::internal_command(char *line)
 		ts.tv_nsec = 1000000L * (millis % 1000);
 		printf("<<<\n");
 		printf("<<< Input: waiting for %d milli seconds >>>\n", millis);
-		nanosleep(&ts, nullptr);
+		nanosleep(&ts, NULL);
 		printf("<<<\n");
 		return true;
 	} else if (!strncasecmp(line, ".print", 6)) {
@@ -148,24 +139,23 @@ bool inputline_c::internal_command(char *line)
 	} else if (!strncasecmp(line, ".end", 3)) {
 		// close input file
 		fclose(file);
-		file = nullptr;
+		file = NULL;
 		return true;
 	}
 	return false;
 }
 
-char *inputline_c::readline(char *buffer, int buffer_size, const char *prompt) 
-{
+char *inputline_c::readline(char *buffer, int buffer_size, const char *prompt) {
 	char *s;
-	if (file != nullptr) {
+	if (file != NULL) {
 		// read from file
-		bool ready = false;
-		while (!ready && file != nullptr) {
+		int ready = 0;
+		while (!ready && file != NULL) {
 			/*** read line from text file ***/
-			if (fgets(buffer, buffer_size, file) == nullptr) {
+			if (fgets(buffer, buffer_size, file) == NULL) {
 				fclose(file);
-				file = nullptr; // file empty, or unreadable
-				ready = true;
+				file = NULL; // file empty, or unreadable
+				ready = 1;
 			} else {
 				// remove terminating "\n"
 				for (s = buffer; *s; s++)
@@ -191,12 +181,12 @@ char *inputline_c::readline(char *buffer, int buffer_size, const char *prompt)
 					continue;
 				if (!internal_command(buffer)) {
 					printf("%s\n", buffer);
-					ready = true;
+					ready = 1;
 				}
 			}
 		}
 	}
-	if (file == nullptr) {
+	if (file == NULL) {
 		/*** read interactive ***/
 		if (prompt && *prompt)
 			printf("%s", prompt);

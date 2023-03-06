@@ -18,8 +18,7 @@
  * Return: 0: nothing hit
  * else: char
  */
-int os_kbhit(void)
-{
+int os_kbhit(void) {
 	if (!_kbhit())
 		return 0 ;
 	else

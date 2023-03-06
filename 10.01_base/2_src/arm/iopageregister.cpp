@@ -39,8 +39,7 @@
 // Place section with register struct at begin of 8K PRU_DMEM_1_0.
 volatile pru_iopage_registers_t *pru_iopage_registers;
 
-int iopageregisters_connect(void) 
-{
+int iopageregisters_connect(void) {
 	void *pru_shared_dataram;
 	// get pointer to RAM
 	if (prussdrv_map_prumem(PRU_DEVICEREGISTER_RAM_ID, &pru_shared_dataram)) {
@@ -59,8 +58,7 @@ int iopageregisters_connect(void)
 }
 
 //  initialize register tables to "empty"
-void iopageregisters_init() 
-{
+void iopageregisters_init() {
 	qunibus->assert_addr_width() ; // address width already known, bus sizing done
 	assert(qunibus->iopage_start_addr) ;
 
@@ -74,8 +72,7 @@ void iopageregisters_init()
 			sizeof(pru_iopage_registers->register_handles));
 }
 
-void iopageregisters_print_tables(void) 
-{
+void iopageregisters_print_tables(void) {
 	unsigned i, n;
 	uint32_t addr;
 

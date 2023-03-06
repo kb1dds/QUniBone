@@ -29,6 +29,7 @@
 #define _STORAGECONTROLLER_HPP_
 
 #include <vector>
+using namespace std;
 
 #include "qunibusdevice.hpp"
 #include "storagedrive.hpp"
@@ -36,7 +37,7 @@
 class storagecontroller_c: public qunibusdevice_c {
 public:
 	unsigned drivecount; // # of drives connected to controller
-	std::vector<storagedrive_c *> storagedrives;
+	vector<storagedrive_c *> storagedrives;
 
 	// does not instantiate the drives
 	storagecontroller_c(void);
