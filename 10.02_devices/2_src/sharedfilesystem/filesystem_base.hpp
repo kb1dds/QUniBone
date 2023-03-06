@@ -45,20 +45,19 @@
 #include <regex>
 #include <ctime>
 
-#include "driveinfo.hpp"
 
 namespace sharedfilesystem {
 
 // error handling, nothing special to filesystems at the moment
 class filesystem_exception: public std::exception {
-	private:
-		std::string message;
-	public:
-		filesystem_exception(std::string msgfmt, ...) ;
-		virtual const char* what() const noexcept {
-			return message.c_str();
-		}
-	};
+private:
+    std::string message;
+public:
+    filesystem_exception(std::string msgfmt, ...) ;
+    virtual const char* what() const noexcept {
+        return message.c_str();
+    }
+};
 
 
 /*
@@ -80,7 +79,7 @@ enum filesystem_type_e {
     fst_rt11
 } ;
 
-enum filesystem_type_e filesystem_type2text(string filesystem_type_text) ;
+enum filesystem_type_e filesystem_type2text(std::string filesystem_type_text) ;
 
 class filesystem_event_queue_c ;
 class file_base_c ;
@@ -96,7 +95,7 @@ public:
     enum operation_e operation ;
 
     // host_path of touched file or directory
-    string host_path; // host path to this dir or file, "/dir/dir/file".
+    std::string host_path; // host path to this dir or file, "/dir/dir/file".
     // also DEC events use the host path, not the DEC path
     // indexes host file map, used with file_by_path() to get DEC file
     // for "op_delete", the file does not exist anymore
@@ -109,9 +108,9 @@ public:
 
     virtual ~filesystem_event_c() {} // make it virtual
 
-    string operation_text() ;
+    std::string operation_text() ;
 
-    virtual string as_text() = 0 ;
+    virtual std::string as_text() = 0 ;
 } ;
 
 class filesystem_event_queue_c:  public	std::queue<filesystem_event_c*>, public logsource_c {
@@ -121,22 +120,11 @@ public:
     }
     filesystem_base_c *filesystem ; // uplink
     void clear(); // and free all events
-    void debug_print(string info) ;
+    void debug_print(std::string info) ;
     void push(filesystem_event_c *event) ;
     filesystem_event_c *pop() ;
     // deletes event from heap and returns copy
 };
-
-
-// manages reference counters for filename strings
-class filesystem_event_filter_c: public std::map<std::string, int>
-{
-public:
-    void add(string path) ;
-    // void remove(string path) ;
-    bool is_filtered(string path) ;
-} ;
-
 
 
 class file_base_c: public logsource_c {
@@ -149,7 +137,7 @@ public:
     directory_base_c *parentdir ; // nullptr if file is root dir
     filesystem_base_c *filesystem ;
 
-    string path ; // filesystem specific path.
+    std::string path ; // filesystem specific path.
     // eg "/dir/dir/file" for host, "[a.b.c]file.ext;n"" for Files-11
 
     int sort_group ; // for sorting
@@ -158,10 +146,9 @@ public:
     uint32_t file_size ; // size in bytes on disk
     struct tm  modification_time; // like stat() st_mtime
     bool	readonly ;
-    virtual string get_filename() = 0 ;
+    virtual std::string get_filename() = 0 ;
     // has "this" changed against cmp?
     virtual bool data_changed(file_base_c *cmp) = 0 ;
-
 
 } ;
 
@@ -187,7 +174,7 @@ public:
     virtual void remove_file(file_base_c *oldfile) ;
 public:
     virtual unsigned file_count() ;
-    void debug_print(int level) ;
+    void debug_print(int indent_level) ;
 
 } ;
 
@@ -197,9 +184,9 @@ class file_by_path_map_c: public std::map<std::string, file_base_c*>
 public:
     void remember(file_base_c *f) ;
     void forget(file_base_c *f) ;
-    file_base_c *get(string path) ;
+    file_base_c *get(std::string path) ;
 
-    void debug_print(string info) ;
+    void debug_print(std::string info) ;
 } ;
 
 
@@ -216,17 +203,15 @@ public:
     directory_base_c *rootdir ; // derived filesystems must instantiate of correct type
     void clear_rootdir() ; // results in empty root node
 
-    virtual string get_name() = 0 ;
+    // label identifying this instance: "XXDP @ RL02 #1", "Host dir /root/10.02_devices/3_test/sharedfilesystem/xxdp-rl02"
+    virtual std::string get_label() = 0 ;
 
-    bool changed ; // unprocessed changes? set by add/rmeove|directory/file
+    bool changed ; // unprocessed changes? set by add/remove|directory/file
     uint64_t change_time_ms ;
 
 
     // quick find files and dirs by name
     file_by_path_map_c	file_by_path ;
-
-    // block re-production of consumed events
-    filesystem_event_filter_c ack_event_filter ;
 
 public:
     // get the path of a file in the tree. key to hash map
@@ -235,7 +220,7 @@ public:
     // DEC Path = [TEST.SRC]main.c;1
     // dann get_filepath() => "/test/src/main.c;1"
     // Absolute path: /root/qunibone/myfiles11image/test/src/main.c;1
-    virtual string get_filepath(file_base_c *f) = 0 ;
+    virtual std::string get_filepath(file_base_c *f) = 0 ;
 
     virtual void add_directory(directory_base_c *parentdir, directory_base_c *newdir) ;
     virtual void remove_directory(directory_base_c *olddir);
@@ -258,19 +243,25 @@ protected:
     class sort_group_regex_c {
     public:
         int group;
-        string pattern_const ; // regex as text
+        std::string pattern_const ; // regex as text
         std::regex pattern_regex;
     } ;
 
 protected:
     // an ordered list of regex pattern = list of groups
-    vector<sort_group_regex_c>	sort_group_regexes ;
-    void sort_add_group_pattern(string pattern) ;
+    std::vector<sort_group_regex_c>	sort_group_regexes ;
+    void sort_add_group_pattern(std::string pattern) ;
 
-    void sort(vector<file_base_c *> file_list) ;
+    void sort(std::vector<file_base_c *> file_list) ;
 
 public:
-    void debug_print(string info) ;
+    void debug_print(std::string info) ;
+
+protected:
+    uint64_t timer_start_ms ;
+    void timer_start() ;
+    void timer_debug_print(std::string info) ;
+
 
 } ;
 

@@ -50,6 +50,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <memory>
+#include <iostream>
 
 
 
@@ -57,8 +58,6 @@
 //#include "main.h" // linewidth
 #include "logger.hpp"
 #include "utils.hpp"
-
-using namespace std;
 
 
 // singleton
@@ -69,10 +68,9 @@ rolling_text_buffers_c rolling_text_buffers ;
  * strcpy without buffer overlfow
  */
 void strcpy_s(char *dest, int len, const char *src)
-
 {
     strncpy(dest, src, len - 1);
-    dest[len - 1] = 0; // termiante if truncated
+    dest[len - 1] = 0; // terminate if truncated
 }
 
 /*********************************
@@ -94,18 +92,19 @@ void SIGINTcatchnext()
     SIGINTreceived = 0;
 }
 
-void break_here(void) {
+void break_here(void) 
+{
 }
 
 
 // exception constructor with printf() arguments
-printf_exception::printf_exception(const string msgfmt, ...)
+printf_exception::printf_exception(const std::string msgfmt, ...)
 {
     char buffer[1024];
     va_list args;
     va_start(args, msgfmt);
     vsprintf(buffer, msgfmt.c_str(), args);
-    message = string(buffer) ;
+    message = std::string(buffer) ;
     va_end(args);
 }
 
@@ -192,6 +191,16 @@ uint32_t random32_log(uint32_t limit)
         result %= limit;
     return result;
 }
+
+
+
+bool is_leapyear(int y) {
+    return ((y % 4 == 0) && (y % 100 != 0)) || (y % 400 == 0);
+}
+
+int monthlen_noleapyear[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+int monthlen_leapyear[12]   = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
 
 char *cur_time_text()
 {
@@ -294,7 +303,7 @@ char *printf_to_cstr(const char *fmt, ...)
     va_start(args, fmt);
     auto r = std::vsnprintf(buf, sizeof buf, fmt, args);
     va_end(args);
-	assert(r >= 0 &&  r < (int)sizeof(buf)) ; // no error, no overflow
+    assert(r >= 0 &&  r < (int)sizeof(buf)) ; // no error, no overflow
     return buf ;
 }
 
@@ -305,10 +314,10 @@ std::string printf_to_string(const char *fmt, ...)
 
     va_list args;
     va_start(args, fmt);
-	auto r = std::vsnprintf(buf, sizeof buf, fmt, args);  // save truncate on overflow
+    auto r = std::vsnprintf(buf, sizeof buf, fmt, args);  // save truncate on overflow
     va_end(args);
 
-	assert(r >= 0 &&  r < (int)sizeof(buf)) ; // no error, no overflow
+    assert(r >= 0 &&  r < (int)sizeof(buf)) ; // no error, no overflow
     if (r < 0)
         // conversion failed
         return {};
@@ -344,7 +353,7 @@ char *fileErrorText(const char *msgfmt, const char *fname)
 
 
 // are all bytes in file behind "offset" set to "val" ?
-bool is_fileset(string *fpath, uint8_t val, uint32_t offset)
+bool is_fileset(std::string *fpath, uint8_t val, uint32_t offset)
 {
     bool result;
     FILE *f;
@@ -376,7 +385,7 @@ bool is_fileset(string *fpath, uint8_t val, uint32_t offset)
 // input "path" is copied, so calls like
 //		split-path(path, &path, &filename ,...) are allowed
 // TODO: should it really strip dot from "basename." ?
-void split_path(string path, string *directories, string *filename, string *basename, string *extension)
+void split_path(std::string path, std::string *directories, std::string *filename, std::string *basename, std::string *extension)
 {
     // path is a true copy, so its buffer can be split in pieces
     const char *path_buff = path.c_str();
@@ -408,15 +417,15 @@ void split_path(string path, string *directories, string *filename, string *base
         // strip off dir, without trailing /
         if (directories) {
             if (start_trailing_slashes_idx == 0) // but keep single "/", like in /file.ext
-                *directories = string(path_buff, start_trailing_slashes_idx+1);
+                *directories = std::string(path_buff, start_trailing_slashes_idx+1);
             else
-                *directories = string(path_buff, start_trailing_slashes_idx);
+                *directories = std::string(path_buff, start_trailing_slashes_idx);
         }
         path_buff += last_match_idx+1 ; // trunk leading path and trailing /
     }
     // path_buff now points to start of filename
     if (filename)
-        *filename = string(path_buff) ;
+        *filename = std::string(path_buff) ;
 
     // basename is the part behind the last_match_idx slash and before the "."
     // special cases:  "." and ".."
@@ -444,22 +453,22 @@ void split_path(string path, string *directories, string *filename, string *base
     if (last_match_idx < 0 || start_leading_dots_idx == 0) { // no "." =>  no extension
         // handles also "leading dot", like in ".file", or "." or ".."
         if (basename)
-            *basename = string(path_buff) ;
+            *basename = std::string(path_buff) ;
         if (extension)
             *extension = "" ;
     } else {
         // split off extension, without "."
         if (basename)
-            *basename = string(path_buff, last_match_idx);
+            *basename = std::string(path_buff, last_match_idx);
         path_buff += last_match_idx+1 ; // trunk leading path
         if (extension)
-            *extension = string(path_buff) ;
+            *extension = std::string(path_buff) ;
     }
 }
 
-void split_path_test_single(string path)
+void split_path_test_single(std::string path)
 {
-    string directory, basename, extension ;
+    std::string directory, basename, extension ;
     //split_path(path, &directory, nullptr, &basename, &extension);
     // multiple calls, to test nullptr
     split_path(path, &directory, nullptr, nullptr, nullptr);
@@ -538,7 +547,7 @@ std::string absolute_path(std::string *path)
         return *path ; // is already absolute
     char pathbuf[PATH_MAX] ;
     getcwd(pathbuf, sizeof(pathbuf)) ;
-    string result = string(pathbuf) + string("/") + *path;
+    std::string result = std::string(pathbuf) + std::string("/") + *path;
     return result ;
 }
 
@@ -558,7 +567,7 @@ int file_write(char *fpath, uint8_t *data, unsigned size)
     return 0;
 }
 
-bool file_exists(string *filename)
+bool file_exists(std::string *filename)
 {
     struct stat buf;
     if (stat(filename->c_str(), &buf) != -1) {
@@ -625,7 +634,7 @@ static int rad50_val2chr(int val)
 // convert 3 chars in RAD-50 encoding to a string
 // letters are digits in a base 40 (octal "50") number system
 // highest digit = left most letter
-string rad50_decode(uint16_t w)
+std::string rad50_decode(uint16_t w)
 {
     char result[4];
     result[2] = rad50_val2chr(w % 050);
@@ -634,11 +643,11 @@ string rad50_decode(uint16_t w)
     w /= 050;
     result[0] = rad50_val2chr(w);
     result[3] = 0;
-    return string(result);
+    return std::string(result);
 }
 
 // convert first 3 chars. if less than 3 cars: space appended
-uint16_t rad50_encode(string s)
+uint16_t rad50_encode(std::string s)
 {
     uint16_t result = 0;
     int len;
@@ -662,9 +671,10 @@ uint16_t rad50_encode(string s)
 
 #define HEXDUMP_BYTESPERLINE	16
 // mount hex and ascii and print
-static void hexdump_put(FILE *stream, unsigned start, char *line_hexb, char* line_hexw,
+static void hexdump_put(std::ostream &stream, unsigned start, char *line_hexb, char* line_hexw,
                         char *line_ascii)
 {
+    char buffer[HEXDUMP_BYTESPERLINE * 3 +80] ;
     // expand half filled lines
     while (strlen(line_hexb) < HEXDUMP_BYTESPERLINE * 3)
         strcat(line_hexb, " ");
@@ -672,13 +682,15 @@ static void hexdump_put(FILE *stream, unsigned start, char *line_hexb, char* lin
         strcat(line_hexw, " ");
     while (strlen(line_ascii) < HEXDUMP_BYTESPERLINE)
         strcat(line_ascii, " ");
-    fprintf(stream, "%3x: %s   %s  %s\n", start, line_hexb, line_hexw, line_ascii);
+    sprintf(buffer, "%3x: %s   %s  %s\n", start, line_hexb, line_hexw, line_ascii);
+    stream << buffer ;
     line_hexb[0] = 0; // clear output
     line_hexw[0] = 0;
     line_ascii[0] = 0;
 }
+						
 // hex dump with info
-void hexdump(FILE *stream, uint8_t *data, int size, char *fmt, ...)
+void hexdump(std::ostream &stream, uint8_t *data, int size, const char *fmt, ...)
 {
     va_list args;
     int i, startaddr;
@@ -687,9 +699,10 @@ void hexdump(FILE *stream, uint8_t *data, int size, char *fmt, ...)
     char line_ascii[40]; // buffer for ASCII chars
 
     if (fmt && strlen(fmt)) {
+        char buffer[256] ;
         va_start(args, fmt);
-        vfprintf(stream, fmt, args);
-        fprintf(stream, "\n");
+        vsprintf(buffer, fmt, args);
+        stream << buffer << "\n";
         va_end(args);
     }
     line_hexb[0] = 0; // clear output

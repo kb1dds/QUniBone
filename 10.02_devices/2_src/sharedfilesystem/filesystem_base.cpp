@@ -49,7 +49,7 @@
 namespace sharedfilesystem {
 
 
-enum filesystem_type_e filesystem_type2text(string filesystem_type_text)
+enum filesystem_type_e filesystem_type2text(std::string filesystem_type_text)
 {
     if (! strcasecmp(filesystem_type_text.c_str(), "XXDP"))
         return fst_xxdp ;
@@ -62,18 +62,18 @@ enum filesystem_type_e filesystem_type2text(string filesystem_type_text)
 
 // exception constructor with printf() arguments
 // exception constructor with printf() arguments
-filesystem_exception::filesystem_exception(const string msgfmt, ...)
+filesystem_exception::filesystem_exception(const std::string msgfmt, ...)
 {
     char buffer[1024];
     va_list args;
     va_start(args, msgfmt);
     vsprintf(buffer, msgfmt.c_str(), args);
-    message = string(buffer) ;
+    message = std::string(buffer) ;
     va_end(args);
 }
 
 
-string filesystem_event_c::operation_text()
+std::string filesystem_event_c::operation_text()
 {
     switch(operation) {
     case op_create:
@@ -97,16 +97,11 @@ void filesystem_event_queue_c::clear()
 }
 
 // event into queue, queue takes ownership
-// event transmission blocked if it's an expected ack_event
 void filesystem_event_queue_c::push(filesystem_event_c *event)
 {
     event->event_queue = this ;
-    if (filesystem->ack_event_filter.is_filtered(event->host_path)) {
-        DEBUG(printf_to_cstr("%s event_qeue.push() blocked by ack_event_filter: %s", filesystem->get_name().c_str(), event->as_text().c_str())) ;
-        return ;
-    }
     std::queue<filesystem_event_c*>::push(event) ;
-    DEBUG(printf_to_cstr("%s event_qeue.push() %s", filesystem->get_name().c_str(), event->as_text().c_str())) ;
+    DEBUG("%s event_qeue.push() %s", filesystem->get_label().c_str(), event->as_text().c_str()) ;
 }
 
 // implements front & pop. caller gets ownership
@@ -117,14 +112,14 @@ filesystem_event_c *filesystem_event_queue_c::pop()
     return result ;
 }
 
-void filesystem_event_queue_c::debug_print(string info)
+void filesystem_event_queue_c::debug_print(std::string info)
 {
     if (logger->ignored(this, LL_DEBUG))
         return ;
 
     // temporary copy, shares pointers
     filesystem_event_queue_c tmp_event_queue = *this ;
-    DEBUG(printf_to_cstr("%s. Debug dump of %s file system event queue:\n", info.c_str(), filesystem->get_name().c_str())) ;
+    DEBUG("%s. Debug dump of %s file system event queue:\n", info.c_str(), filesystem->get_label().c_str()) ;
 //    printf("%s. Debug dump of %s file system event queue:\n", info.c_str(), filesystem->get_name().c_str()) ;
     while (!tmp_event_queue.empty()) {
         filesystem_event_c *event = tmp_event_queue.pop() ;
@@ -156,7 +151,7 @@ void file_by_path_map_c::forget(file_base_c *f)
 }
 
 // get a file by its path
-file_base_c *file_by_path_map_c::get(string path)
+file_base_c *file_by_path_map_c::get(std::string path)
 {
     auto item = std::map<std::string,file_base_c*>::find(path) ;
     if (item != end())
@@ -166,7 +161,7 @@ file_base_c *file_by_path_map_c::get(string path)
 }
 
 
-void file_by_path_map_c::debug_print(string info)
+void file_by_path_map_c::debug_print(std::string info)
 {
     printf("%s. Dump of file_by_path_map:\n", info.c_str()) ;
     for (auto it = begin(); it != end(); it++) {
@@ -187,36 +182,6 @@ bool sort_file_comp(file_base_c *f1, file_base_c *f2)
     else return f1->get_filename().compare(f2->get_filename()) < 0 ;
 
 }
-
-// create as 1 when not existing
-void filesystem_event_filter_c::add(string path)
-{
-    auto it = find(path) ;
-    if (it == end())
-        insert( {path, 1}) ;
-    else it->second++ ;
-}
-
-/*
-// delete entry when reached 0
-void filesystem_event_filter_c::remove(string path)
-{
-    auto it = find(path) ;
-    if (it != end()) {
-        it->second-- ;
-        if (it->second == 0)
-            erase(it, it) ;
-    }
-
-}
-*/
-
-bool filesystem_event_filter_c::is_filtered(string path)
-{
-    auto it = find(path) ;
-    return (it != end()) ;
-}
-
 
 
 file_base_c::file_base_c()
@@ -291,7 +256,7 @@ void directory_base_c::clear()
 void directory_base_c::add_file(file_base_c *newfile)
 {
     newfile->parentdir = this ;
-    newfile->filesystem = this->filesystem ; // uplink
+    newfile->filesystem = filesystem ; // uplink
     newfile->path = filesystem->get_filepath(newfile) ; //calc and cache path
     files.push_back(newfile) ;
     filesystem->file_by_path.remember(newfile) ; // register in name map
@@ -320,26 +285,30 @@ unsigned directory_base_c::file_count() {
 
 
 // dump a directoy and all its files
-void directory_base_c::debug_print(int level)
+void directory_base_c::debug_print(int indent_level)
 {
-    int indent = 4 ;
+    const int indent = 4 ;
     if (logger->ignored(filesystem, LL_DEBUG))
         return ;
+    log_level_ptr = filesystem->log_level_ptr ; // inherit log level
+
     // print directories in "[   ]"
-    printf("%*s[%s] => %s\n", indent*level, "", get_filename().c_str(), path.c_str()) ;
-    //	DEBUG(printf_to_cstr("%*s[%s]", indent*level, "", get_filename())) ;
+//    printf("%*s[%s] => %s\n", indent*indent_level, "", get_filename().c_str(), path.c_str()) ;
+    DEBUG("%*s[%s] => %s. subdir_count=%d, file_count=%d.", indent*indent_level, "", get_filename().c_str(),  path.c_str(),
+          (unsigned)subdirectories.size(), (unsigned)files.size()) ;
     // the subdirectories first
-    level++ ;
+    indent_level++ ;
     for (unsigned i=0 ; i < subdirectories.size() ; ++i)
-        subdirectories[i]->debug_print(level) ;
+        subdirectories[i]->debug_print(indent_level) ;
     // then the files
     for (unsigned i=0 ; i < files.size() ; ++i) {
         file_base_c *f = files[i] ;
         char timebuff[80] ;
         strftime(timebuff, sizeof(timebuff), "%Y-%m-%d %H:%M:%S", &(f->modification_time)) ;
-        printf("%*s%s, path=%s, file_size=%u, mtime=%s\n", indent*(level), "",
-               f->get_filename().c_str(), f->path.c_str(), f->file_size, timebuff ) ;
-        //	DEBUG(printf_to_cstr("%*s%s", indent*level, "", files[i]->get_filename().c_str())) ;
+        //printf("%*s%s, path=%s, file_size=%u, mtime=%s\n", indent*indent_level, "",
+        //       f->get_filename().c_str(), f->path.c_str(), f->file_size, timebuff ) ;
+        DEBUG("%*s%s, path=%s, file_size=%u, mtime=%s\n", indent*indent_level, "",
+              f->get_filename().c_str(), f->path.c_str(), f->file_size, timebuff ) ;
     }
 }
 
@@ -428,23 +397,23 @@ void filesystem_base_c::remove_directory(directory_base_c *olddir)
 // add a regex string, defining a new "group".
 // the sort order of this group is higher than previous added ones.
 // called only in constructor of derived filesystem before 1st sort()
-void filesystem_base_c::sort_add_group_pattern(string pattern)
+void filesystem_base_c::sort_add_group_pattern(std::string pattern)
 {
     sort_group_regex_c tmp ;
 
     try {
         tmp.pattern_const = pattern ;
-        tmp.pattern_regex = std::regex(pattern, regex_constants::icase) ;
+        tmp.pattern_regex = std::regex(pattern, std::regex_constants::icase) ;
         tmp.group = sort_group_regexes.size() ; // enumerate
         sort_group_regexes.push_back(tmp);
     }
-    catch (regex_error e) {
+    catch (std::regex_error e) {
         ERROR("Error compiling tmp: %s", e.what());
     }
 }
 
 // *count maybe -1, then lists are NULL terminated
-void filesystem_base_c::sort(vector<file_base_c *> files)
+void filesystem_base_c::sort(std::vector<file_base_c *> files)
 {
     unsigned i, j;
     bool match;
@@ -477,14 +446,27 @@ void filesystem_base_c::sort(vector<file_base_c *> files)
 }
 
 
-void filesystem_base_c::debug_print(string info)
+void filesystem_base_c::debug_print(std::string info)
 {
     if (logger->ignored(this, LL_DEBUG))
         return ;
-    printf("%s. Dump of filesystem %s:\n", info.c_str(), get_name().c_str()) ;
+    DEBUG("%s. Dump of filesystem %s:\n", info.c_str(), get_label().c_str()) ;
     rootdir->debug_print(0) ;
 }
 
+void filesystem_base_c::timer_start()
+{
+    timer_start_ms = now_ms() ;
+}
+
+void filesystem_base_c::timer_debug_print(std::string info)
+{
+    if (logger->ignored(this, LL_DEBUG))
+        return ;
+
+    uint64_t elapsed_ms = now_ms() - timer_start_ms ;
+    DEBUG("%s. Elapsed time %0.3f sec\n", info.c_str(), (double)elapsed_ms / 1000.0) ;
+}
 
 } // namespace
 

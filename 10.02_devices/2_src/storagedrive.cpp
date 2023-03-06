@@ -34,7 +34,6 @@
 
 #include <fstream>
 #include <ios>
-using namespace std;
 
 #include "logger.hpp"
 #include "gpios.hpp" // drive_activity_led
@@ -62,7 +61,7 @@ storagedrive_c::storagedrive_c(storagecontroller_c *_controller) :
     // or pure "shared" directory, or syncronizing share<->binary image
 
     // default: shared filesystem not (yet) implementable for this disk type (MSCP)
-    sharedfilesystem_drivetype = sharedfilesystem::devNONE ;
+    drive_type = drive_type_e::NONE ;
 }
 
 storagedrive_c::~storagedrive_c() 
@@ -78,20 +77,23 @@ void storagedrive_c::image_params_readonly(bool readonly)
     image_shareddir.readonly = readonly ;
 }
 
-bool storagedrive_c::image_is_param(parameter_c *param) {
+bool storagedrive_c::image_is_param(parameter_c *param) 
+{
     return (param == &image_filepath)
            || (param == &image_filesystem)
            || (param == &image_shareddir) ;
 }
 
 // implements params, so must handle "change"
-bool storagedrive_c::on_param_changed(parameter_c *param) {
+bool storagedrive_c::on_param_changed(parameter_c *param) 
+{
     // no own "enable" logic
     return device_c::on_param_changed(param);
 }
 
 // free image, todo: atomic via mutex
-void storagedrive_c::image_delete() {
+void storagedrive_c::image_delete() 
+{
     if (image == nullptr)
         return ;
     storageimage_base_c *tmpimage = image ;
@@ -135,7 +137,7 @@ bool storagedrive_c::image_recreate_on_param_change(parameter_c *param)
 
 // eval parameter set for shared image
 // result: parameter accepted, image recreated
-bool storagedrive_c::image_recreate_shared_on_param_change(string image_path, string filesystem_paramval, string shareddir_paramval) 
+bool storagedrive_c::image_recreate_shared_on_param_change(std::string image_path, std::string filesystem_paramval, std::string shareddir_paramval) 
 {
     bool ok = false ;
 
@@ -149,8 +151,8 @@ bool storagedrive_c::image_recreate_shared_on_param_change(string image_path, st
         image = new sharedfilesystem::storageimage_shared_c(
 			image_path,
 			/*use_syncer_thread*/true,
-            filesystem_type, sharedfilesystem_drivetype, unitno.value,
-            capacity.value, shareddir_paramval) ;
+            filesystem_type,
+            shareddir_paramval) ;
 		if (image != nullptr)
 	        image->log_level_ptr = log_level_ptr ; // same log level as drive
         // filesystem_dec has lifetime between open() and close()
@@ -168,27 +170,29 @@ bool storagedrive_c::image_open(bool create)
         return false ;
 
     // virtual method of implementation
-    return image->open(create) ;
+    return image->open(this, create) ;
 }
 
-void storagedrive_c::image_close(void) {
+void storagedrive_c::image_close(void) 
+{
     if (image == nullptr)
         return ;
     image->close() ;
 }
 
-bool storagedrive_c::image_is_open(void) {
+bool storagedrive_c::image_is_open(void) 
+{
     if (image == nullptr)
         return false ;
     return image->is_open() ;
 }
 
-bool storagedrive_c::image_is_readonly() {
+bool storagedrive_c::image_is_readonly() 
+{
     if (image == nullptr)
         return false ;
     return image->is_readonly() ;
 }
-
 
 bool storagedrive_c::image_truncate(void) {
     if (image == nullptr)
@@ -196,13 +200,15 @@ bool storagedrive_c::image_truncate(void) {
     return image->truncate() ;
 }
 
-uint64_t storagedrive_c::image_size(void) {
+uint64_t storagedrive_c::image_size(void) 
+{
     if (image == nullptr)
         return 0 ;
     return image->size() ;
 }
 
-void storagedrive_c::image_read(uint8_t *buffer, uint64_t position, unsigned len) {
+void storagedrive_c::image_read(uint8_t *buffer, uint64_t position, unsigned len) 
+{
     if (image == nullptr)
         return ;
     set_activity_led(true) ; // indicate only read/write access
@@ -210,7 +216,8 @@ void storagedrive_c::image_read(uint8_t *buffer, uint64_t position, unsigned len
     set_activity_led(false) ;
 }
 
-void storagedrive_c::image_write(uint8_t *buffer, uint64_t position, unsigned len) {
+void storagedrive_c::image_write(uint8_t *buffer, uint64_t position, unsigned len) 
+{
     if (image == nullptr)
         return ;
     set_activity_led(true) ;
@@ -221,7 +228,8 @@ void storagedrive_c::image_write(uint8_t *buffer, uint64_t position, unsigned le
 // Sometimes when writing incomplete disk blocks, the remaining bytes must be filled with 00s
 // Some disk are guaranteed to write only whole blocks, then always unused_byte_count=0
 // (test with MSCP, KED under RT11)
-void storagedrive_c::image_clear_remaining_block_bytes(unsigned block_size_bytes, uint64_t position, unsigned len) {
+void storagedrive_c::image_clear_remaining_block_bytes(unsigned block_size_bytes, uint64_t position, unsigned len) 
+{
     // asume last transaction worte "len" bytes to offset "position"
     uint64_t unused_block_bytes_start = position + len ; // first unused
     // round to block end
@@ -235,7 +243,8 @@ void storagedrive_c::image_clear_remaining_block_bytes(unsigned block_size_bytes
     }
 }
 
-void storagedrive_c::set_activity_led(bool onoff) {
+void storagedrive_c::set_activity_led(bool onoff) 
+{
     // only 4 leds: if larger number, then supress display
     if (activity_led.value >= 4)
         return ;
@@ -246,7 +255,8 @@ void storagedrive_c::set_activity_led(bool onoff) {
 
 
 // fill buffer with test data to be placed at "file_offset"
-void storagedrive_selftest_c::block_buffer_fill(unsigned block_number) {
+void storagedrive_selftest_c::block_buffer_fill(unsigned block_number) 
+{
     assert((block_size % 4) == 0); // whole uint32_t
     for (unsigned i = 0; i < block_size / 4; i++) {
         // i counts dwords in buffer
@@ -257,7 +267,8 @@ void storagedrive_selftest_c::block_buffer_fill(unsigned block_number) {
 }
 
 // verify pattern generated by fillbuff
-void storagedrive_selftest_c::block_buffer_check(unsigned block_number) {
+void storagedrive_selftest_c::block_buffer_check(unsigned block_number) 
+{
     assert((block_size % 4) == 0);	// whole uint32_t
     for (unsigned i = 0; i < block_size / 4; i++) {
         // i counts dwords in buffer
@@ -275,7 +286,8 @@ void storagedrive_selftest_c::block_buffer_check(unsigned block_number) {
 
 // self test of random access file interface
 // test file has 'block_count' blocks with 'block_size' bytes capacity each.
-void storagedrive_selftest_c::test() {
+void storagedrive_selftest_c::test() 
+{
     unsigned i;
     bool *block_touched = (bool *) malloc(block_count * sizeof(bool)); // dyn array
     int blocks_to_touch;
