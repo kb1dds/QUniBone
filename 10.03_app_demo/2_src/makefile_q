@@ -53,7 +53,7 @@ endif
 
 CCFLAGS= \
 	-std=c++11     \
-	-fmax-errors=5     \
+	-fmax-errors=3     \
 	-I$(PRUSS_INCLUDE_DIR)	\
 	-I.	\
 	-I$(SHARED_SRC_DIR)	\
@@ -105,6 +105,8 @@ OBJECTS = $(OBJDIR)/application.o	\
     $(OBJDIR)/rl11.o	\
     $(OBJDIR)/rk11.o        \
     $(OBJDIR)/rk05.o        \
+    $(OBJDIR)/rf11.o    \
+    $(OBJDIR)/rs11.o    \
 	$(OBJDIR)/uda.o         \
 	$(OBJDIR)/mscp_server.o \
 	$(OBJDIR)/mscp_drive.o \
@@ -118,6 +120,7 @@ OBJECTS = $(OBJDIR)/application.o	\
 	$(OBJDIR)/storageimage.o	\
 	$(OBJDIR)/storagedrive.o	\
     $(OBJDIR)/storagecontroller.o	\
+	$(OBJDIR)/sharedfilesystem/storageimage_partition.o \
 	$(OBJDIR)/sharedfilesystem/storageimage_shared.o \
 	$(OBJDIR)/sharedfilesystem/filesystem_base.o \
 	$(OBJDIR)/sharedfilesystem/filesystem_host.o \
@@ -145,7 +148,6 @@ OBJECTS = $(OBJDIR)/application.o	\
 	$(OBJDIR)/inputline.o	\
 	$(OBJDIR)/kbhit.o	\
 	$(OBJDIR)/bitcalc.o	\
-	$(OBJDIR)/boolarray.o	\
 	$(OBJDIR)/pru.o \
 	$(OBJDIR)/mailbox.o	\
 	$(OBJDIR)/ddrmem.o	\
@@ -262,6 +264,12 @@ $(OBJDIR)/rk05.o :  $(DEVICE_SRC_DIR)/rk05.cpp $(DEVICE_SRC_DIR)/rk05.hpp
 $(OBJDIR)/rk11.o :  $(DEVICE_SRC_DIR)/rk11.cpp $(DEVICE_SRC_DIR)/rk11.hpp
 	$(CC) $(CCFLAGS) -Wno-missing-field-initializers $< -o $@
 
+$(OBJDIR)/rs11.o :  $(DEVICE_SRC_DIR)/rs11.cpp $(DEVICE_SRC_DIR)/rs11.hpp
+	$(CC) $(CCFLAGS) $< -o $@
+
+$(OBJDIR)/rf11.o :  $(DEVICE_SRC_DIR)/rf11.cpp $(DEVICE_SRC_DIR)/rf11.hpp
+	$(CC) $(CCFLAGS) $< -o $@
+
 $(OBJDIR)/rx11.o :  $(DEVICE_SRC_DIR)/rx11.cpp $(DEVICE_SRC_DIR)/rx11211.hpp
 	$(CC) $(CCFLAGS) $< -o $@
 
@@ -299,6 +307,10 @@ $(OBJDIR)/storagedrive.o :  $(DEVICE_SRC_DIR)/storagedrive.cpp $(DEVICE_SRC_DIR)
 	$(CC) $(CCFLAGS) $< -o $@
 
 $(OBJDIR)/storagecontroller.o :  $(DEVICE_SRC_DIR)/storagecontroller.cpp $(DEVICE_SRC_DIR)/storagecontroller.hpp
+	$(CC) $(CCFLAGS) $< -o $@
+
+$(OBJDIR)/sharedfilesystem/storageimage_partition.o :  $(SHAREDFILESYSTEM_SRC_DIR)/storageimage_partition.cpp $(SHAREDFILESYSTEM_SRC_DIR)/storageimage_partition.hpp
+	mkdir -p $(OBJDIR)/sharedfilesystem
 	$(CC) $(CCFLAGS) $< -o $@
 
 $(OBJDIR)/sharedfilesystem/storageimage_shared.o :  $(SHAREDFILESYSTEM_SRC_DIR)/storageimage_shared.cpp $(SHAREDFILESYSTEM_SRC_DIR)/storageimage_shared.hpp
@@ -370,9 +382,6 @@ $(OBJDIR)/kbhit.o :  $(COMMON_SRC_DIR)/kbhit.c $(COMMON_SRC_DIR)/kbhit.h
 	$(CC) $(CCFLAGS) -xc++ $< -o $@
 
 $(OBJDIR)/bitcalc.o :  $(COMMON_SRC_DIR)/bitcalc.cpp $(COMMON_SRC_DIR)/bitcalc.h
-	$(CC) $(CCFLAGS) $< -o $@
-
-$(OBJDIR)/boolarray.o :  $(COMMON_SRC_DIR)/boolarray.cpp $(COMMON_SRC_DIR)/boolarray.hpp
 	$(CC) $(CCFLAGS) $< -o $@
 
 $(OBJDIR)/bytebuffer.o :  $(BASE_SRC_DIR)/bytebuffer.cpp $(BASE_SRC_DIR)/bytebuffer.hpp

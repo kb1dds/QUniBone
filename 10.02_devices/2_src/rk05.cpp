@@ -8,8 +8,6 @@
 
 #include <assert.h>
 
-using namespace std;
-
 #include "logger.hpp"
 #include "utils.hpp"
 #include "timeout.hpp"
@@ -19,64 +17,79 @@ using namespace std;
 rk05_c::rk05_c(storagecontroller_c *_controller) :
     storagedrive_c(_controller), _current_cylinder(0), _seek_count(0), _sectorCount(0), _wps(
         false), _rwsrdy(true), _dry(false), _sok(false), _sin(false), _dru(false), _rk05(
-            true), _dpl(false), _scp(false) {
+            true), _dpl(false), _scp(false) 
+{
     name.value = "RK05";
+    drive_type = drive_type_e::RK035 ;
     type_name.value = "RK05";
     log_label = "RK05";
-    _geometry.Cylinders = 203;   // Standard RK05
-    _geometry.Heads = 2;
-    _geometry.Sectors = 12;
-    _geometry.Sector_Size_Bytes = 512;
-    sharedfilesystem_drivetype = sharedfilesystem::devRK035 ;
+    geometry.cylinder_count = 203;   // Standard RK05
+    geometry.head_count = 2;
+    geometry.sector_count = 12;
+    geometry.sector_size_bytes = 512;
+	
+	capacity.value = geometry.get_raw_capacity() ;
+
 }
 
 //
 // Status registers
 //
 
-uint32_t rk05_c::get_sector_counter(void) {
+uint32_t rk05_c::get_sector_counter(void) 
+{
     return _sectorCount;
 }
 
-bool rk05_c::get_write_protect(void) {
+bool rk05_c::get_write_protect(void) 
+{
     return _wps;
 }
 
-bool rk05_c::get_rws_ready(void) {
+bool rk05_c::get_rws_ready(void) 
+{
     return _rwsrdy;
 }
 
-bool rk05_c::get_drive_ready(void) {
+bool rk05_c::get_drive_ready(void) 
+{
     return _dry;
 }
 
-bool rk05_c::get_sector_counter_ok(void) {
+bool rk05_c::get_sector_counter_ok(void) 
+{
     return _sok;
 }
 
-bool rk05_c::get_seek_incomplete(void) {
+bool rk05_c::get_seek_incomplete(void) 
+{
     return _sin;
 }
 
-bool rk05_c::get_drive_unsafe(void) {
+bool rk05_c::get_drive_unsafe(void) 
+{
     return _dru;
 }
 
-bool rk05_c::get_rk05_disk_online(void) {
+bool rk05_c::get_rk05_disk_online(void) 
+{
     return _rk05;
 }
 
-bool rk05_c::get_drive_power_low(void) {
+bool rk05_c::get_drive_power_low(void) 
+{
     return _dpl;
 }
 
-bool rk05_c::get_search_complete(void) {
+bool rk05_c::get_search_complete(void) 
+{
     bool scp = _scp;
     _scp = false;
     return scp;
 }
 
-bool rk05_c::on_param_changed(parameter_c *param) {
+bool rk05_c::on_param_changed(parameter_c *param) 
+{
     if (param == &enabled) {
         if (!enabled.new_value) {
             // disable switches power OFF.
@@ -97,7 +110,8 @@ bool rk05_c::on_param_changed(parameter_c *param) {
 //
 
 // after QBUS/UNIBUS install, device is reset by DCLO/DCOK cycle
-void rk05_c::on_power_changed(signal_edge_enum aclo_edge, signal_edge_enum dclo_edge) {
+void rk05_c::on_power_changed(signal_edge_enum aclo_edge, signal_edge_enum dclo_edge) 
+{
     UNUSED(aclo_edge) ;
 // called at high priority.
     if (dclo_edge == SIGNAL_EDGE_RAISING) {
@@ -106,7 +120,8 @@ void rk05_c::on_power_changed(signal_edge_enum aclo_edge, signal_edge_enum dclo_
     }
 }
 
-void rk05_c::on_init_changed(void) {
+void rk05_c::on_init_changed(void) 
+{
 // called at high priority.
 
     if (init_asserted) {
@@ -119,10 +134,11 @@ void rk05_c::on_init_changed(void) {
 //
 
 void rk05_c::read_sector(uint32_t cylinder, uint32_t surface, uint32_t sector,
-                         uint16_t* out_buffer) {
-    assert(cylinder < _geometry.Cylinders);
-    assert(surface < _geometry.Heads);
-    assert(sector < _geometry.Sectors);
+                         uint16_t* out_buffer) 
+{
+    assert(cylinder < geometry.cylinder_count);
+    assert(surface < geometry.head_count);
+    assert(sector < geometry.sector_count);
 
     _current_cylinder = cylinder;
 
@@ -143,7 +159,7 @@ void rk05_c::read_sector(uint32_t cylinder, uint32_t surface, uint32_t sector,
 
 // Read the sector into the buffer passed to us.
     image_read(reinterpret_cast<uint8_t*>(out_buffer),
-               get_disk_byte_offset(cylinder, surface, sector), _geometry.Sector_Size_Bytes);
+               geometry.get_image_offset(cylinder, surface, sector), geometry.sector_size_bytes);
 
 // Set RWS ready now that we're done.
     _rwsrdy = true;
@@ -152,10 +168,11 @@ void rk05_c::read_sector(uint32_t cylinder, uint32_t surface, uint32_t sector,
 }
 
 void rk05_c::write_sector(uint32_t cylinder, uint32_t surface, uint32_t sector,
-                          uint16_t* in_buffer) {
-    assert(cylinder < _geometry.Cylinders);
-    assert(surface < _geometry.Heads);
-    assert(sector < _geometry.Sectors);
+                          uint16_t* in_buffer) 
+{
+    assert(cylinder < geometry.cylinder_count);
+    assert(surface < geometry.head_count);
+    assert(sector < geometry.sector_count);
 
     _current_cylinder = cylinder;
 
@@ -176,7 +193,7 @@ void rk05_c::write_sector(uint32_t cylinder, uint32_t surface, uint32_t sector,
 
 // Read the sector into the buffer passed to us.
     image_write(reinterpret_cast<uint8_t*>(in_buffer),
-                get_disk_byte_offset(cylinder, surface, sector), _geometry.Sector_Size_Bytes);
+                geometry.get_image_offset(cylinder, surface, sector), geometry.sector_size_bytes);
 
 // Set RWS ready now that we're done.
     _rwsrdy = true;
@@ -184,8 +201,9 @@ void rk05_c::write_sector(uint32_t cylinder, uint32_t surface, uint32_t sector,
     controller->on_drive_status_changed(this);
 }
 
-void rk05_c::seek(uint32_t cylinder) {
-    assert(cylinder < _geometry.Cylinders);
+void rk05_c::seek(uint32_t cylinder) 
+{
+    assert(cylinder < geometry.cylinder_count);
 
     _seek_count = abs((int32_t) _current_cylinder - (int32_t) cylinder) + 1;
     _current_cylinder = cylinder;
@@ -201,14 +219,16 @@ void rk05_c::seek(uint32_t cylinder) {
     controller->on_drive_status_changed(this);
 }
 
-void rk05_c::set_write_protect(bool protect) {
+void rk05_c::set_write_protect(bool protect) 
+{
     UNUSED(protect);
 
 // Not implemented at the moment.
     _scp = false;
 }
 
-void rk05_c::drive_reset(void) {
+void rk05_c::drive_reset(void) 
+{
 //
 // "The controller directs the selected disk drive to move its
 //  head mechanism to cylinder address 000 and reset all active
@@ -226,7 +246,8 @@ void rk05_c::drive_reset(void) {
 // SCP change will be posted when the seek instigated above is completed.
 }
 
-void rk05_c::worker(unsigned instance) {
+void rk05_c::worker(unsigned instance) 
+{
     UNUSED(instance) ; // only one
     timeout_c timeout;
 
@@ -261,8 +282,3 @@ void rk05_c::worker(unsigned instance) {
     }
 }
 
-uint64_t rk05_c::get_disk_byte_offset(uint32_t cylinder, uint32_t surface, uint32_t sector) {
-    return _geometry.Sector_Size_Bytes
-           * ((cylinder * _geometry.Heads * _geometry.Sectors) + (surface * _geometry.Sectors)
-              + sector);
-}

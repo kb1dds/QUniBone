@@ -40,37 +40,29 @@
 //#include <future>
 #include <stdint.h>
 
-#include "boolarray.hpp"
-#include "driveinfo.hpp"
 #include "storageimage.hpp"
 
 #include "filesystem_host.hpp"
 #include "filesystem_dec.hpp"
-//#include "filesystem_mapper.hpp"
 
 namespace sharedfilesystem {
 
 
 // common features for XXDP and RT11 filesystem
 class storageimage_shared_c: public storageimage_base_c {
-    enum filesystem_type_e type ;
-
-//    std::string type_text ; // "RT11", "XXDP"
+    friend class storageimage_partition_c ;
 
 public:
     storageimage_shared_c(
-        string _image_path,
+        std::string _image_path,
         bool use_syncer_thread,
         enum filesystem_type_e filesystem_type,
-        enum dec_drive_type_e drive_type_text,
-        unsigned drive_unit,
-        uint64_t capacity,
         std::string hostdir) ;
     virtual ~storageimage_shared_c() override ;
     pthread_mutex_t mutex;
 
-    void lock() ; // mutex protection
-    void unlock() ;
+    void lock(const char *caller) ; // mutex protection, debuggable
+    void unlock(const char *caller) ;
 
 // memoryimage handling
 protected:
@@ -80,7 +72,7 @@ protected:
 public:
     // storageimage_base, identic interface from emulated disk drive to all
     // filesystem memory images
-    virtual bool open(bool create) override ;
+    virtual bool open(storagedrive_c *drive, bool create) override ;
     virtual bool is_readonly() override ;
     virtual bool is_open(	void) override ;
     virtual bool truncate(void) override ;
@@ -89,15 +81,15 @@ public:
     virtual uint64_t size(void) override ;
     virtual void close(void) override ;
     virtual void get_bytes(byte_buffer_c *byte_buffer, uint64_t byte_offset, uint32_t data_size) override; // mandatory
-    virtual void set_bytes(byte_buffer_c *byte_buffer) override ; // mandatory
-    virtual void save_to_file(string host_filename) override ; // mandatory
+    virtual void set_bytes(byte_buffer_c *byte_buffer, uint64_t byte_offset) override ; // mandatory
+    virtual void save_to_file(std::string host_filename) override ; // mandatory
 
 protected:
-    string image_path ; // DEC image on SDcard
+    enum filesystem_type_e type ;
+
+    std::string image_path ; // DEC image on SDcard
     // derived file system implementation classes use this
-    string		host_shared_rootdir ; // root of file tree on host, absolute path
-    drive_info_c drive_info ; // block_count, block_size
-    unsigned	drive_unit ; // unit number of drive
+    std::string		host_shared_rootdir ; // root of file tree on host, absolute path
 
     // disk surface
     storageimage_base_c *image ;
@@ -106,6 +98,14 @@ protected:
     bool	dec_image_changed ; // did the PDP changed the image ?
     uint64_t	dec_image_change_time_ms ; // last PDP read or write operation
     void image_data_pdp_access(bool changing) ;
+
+    // interface to filesystem
+public:
+    // for now there's only one parttion, the leading disk area
+    // filesystem may have block_size differing from disk block size
+    storageimage_partition_c  *main_partition ;
+    storageimage_partition_c  *std144_partition ; // bad sector file
+
 
 public: // for tests
 
@@ -136,8 +136,10 @@ private:
     void sync_dec_filesystem_events_to_host() ;
     void sync_host_shared_dir_to_filesystem_and_events() ;
     void sync_host_filesystem_events_to_dec() ;
-    void sync_dec_snapshot() ;
+    void sync_dec_update_snapshot() ;
     void sync_host_restart() ;
+	void sync_update_host_volume_info() ;
+	
 
 
 

@@ -41,7 +41,6 @@
 #include <stdint.h>
 #include <sstream>
 
-#include "blockcache_dec.hpp"
 #include "filesystem_dec.hpp"
 
 namespace sharedfilesystem {
@@ -56,14 +55,13 @@ class file_rt11_c ;
 // - file data, -prefixes and extra dir entries
 class rt11_stream_c: public file_dec_stream_c {
 public:
-    rt11_blocknr_t blocknr; // start block
-    uint32_t	byte_offset ; // offset in start block
+    rt11_blocknr_t start_block_nr; // start block
     rt11_stream_c(file_rt11_c *file,  	rt11_stream_c *stream) ;
-    rt11_stream_c(file_rt11_c *file, string stream_name) ;
+    rt11_stream_c(file_rt11_c *file, std::string stream_name) ;
     ~rt11_stream_c() override ;
     void init() override ;
 
-    string get_host_path() override ;
+    std::string get_host_path() override ;
 };
 
 
@@ -73,9 +71,9 @@ public:
     // filenames on Rt11 have afix 6.3 format, with trailing spaces
     // here basename and ext have trailing space removed.
     // however " EMPTY.FIL"" has a leading space!
-    string basename; // DEC: normally 6 chars, encoded in 2 words RADIX50.
+    std::string basename; // DEC: normally 6 chars, encoded in 2 words RADIX50.
 
-    string ext; // DEC: normally 3 chars, encoded 1 word
+    std::string ext; // DEC: normally 3 chars, encoded 1 word
 
     file_rt11_c() ;
     file_rt11_c(file_rt11_c *f) ;
@@ -96,8 +94,8 @@ public:
     rt11_blocknr_t block_count ; // total blocks on volume (stream_prefix + stream_data)
 
     //
-    string get_filename() override ;
-    rt11_stream_c **get_stream_ptr(string stream_code) ;
+    std::string get_filename() override ;
+    rt11_stream_c **get_stream_ptr(std::string stream_code) ;
     unsigned get_stream_count() override ;
     file_dec_stream_c *get_stream(unsigned index) override ;
 
@@ -116,7 +114,7 @@ public:
         UNUSED(cmp);
         return true ;
     }
-    string get_filename() override {
+    std::string get_filename() override {
         return "RT11ROOT" ;
     }
 
@@ -136,54 +134,54 @@ public:
 class filesystem_rt11_c: public filesystem_dec_c {
 
     typedef struct {
-        enum dec_drive_type_e drive_type;
         // units are in drive_info_c.blocksize != sector size!
-
-        int block_size  ; // 512 bytes for all drives
-        int	block_count ; // # of blocks RT-11 uses on disk surface
-        int	first_dir_blocknr ; /// always 6 ?
-        int	replacable_bad_blocks ;
-        int	dir_seg_count ; // default segment count
+        unsigned block_size  ; // 512 bytes for all drives
+        // unsigned block_count ; // # of blocks RT-11 uses on disk surface, equal to partition size
+        unsigned first_dir_blocknr ; /// always 6 ?
+        unsigned replacable_bad_blocks ;
+        unsigned dir_seg_count ; // default segment count
     } layout_info_t ;
 
     layout_info_t layout_info ;
-    layout_info_t get_documented_layout_info(enum dec_drive_type_e drive_type) ;
+    layout_info_t get_documented_layout_info(drive_type_e drive_type) ;
 
 
     unsigned pack_cluster_size; // Pack cluster size (== 1). Not used?
     rt11_blocknr_t first_dir_blocknr; // Block number of first directory segment
-    string system_version ; // size 3, System version (Radix-50 "V3A"),
-    string volume_id ; // size 12, Volume identification, 12 ASCII chars "RT11A" + 7 spaces
-    string owner_name ; // size 12 Owner name, 12 spaces
-    string system_id ; // size 12, System identification "DECRT11A" + 4 spaces
+    std::string system_version ; // size 3, System version (Radix-50 "V3A"),
+    std::string volume_id ; // size 12, Volume identification, 12 ASCII chars "RT11A" + 7 spaces
+    std::string owner_name ; // size 12 Owner name, 12 spaces
+    std::string system_id ; // size 12, System identification "DECRT11A" + 4 spaces
     uint16_t homeblock_chksum; // checksum of the home block
 
     // directory layout data
     uint16_t dir_total_seg_num ; // total number of segments in this directory
-    uint16_t dir_max_seg_nr ; // number of highest segment in use (only 1st segment)
+    uint16_t dir_max_used_seg_nr ; // number of highest segment in use (only 1st segment)
     uint16_t dir_entry_extra_bytes ; // number of extra bytes per dir entry
 
     bool struct_changed ; // directories or homeblock changed
 
-
 public:
-    filesystem_rt11_c(drive_info_c drive_info, storageimage_base_c *image_partition,   	 uint64_t image_partition_size) ;
+    filesystem_rt11_c(storageimage_partition_c *image_partition) ;
     ~filesystem_rt11_c() override ;
 
     void init() override ;
     void copy_metadata_to(filesystem_base_c *metadata_copy) override ;
 
-    string get_name() override {
-        return "RT11" ;
-    }
+    struct tm date_decode(uint16_t w) ;
+    uint16_t date_encode(struct tm t) ;
+    struct tm date_adjust(struct tm t) ;
+
+    std::string get_label() override ;
 
     unsigned get_block_size() override {
         return layout_info.block_size ; // in bytes
     }
+
     // name of internal special files
-    string bootblock_filename ;
-    string monitor_filename ;
-    string volume_info_filename ;
+    std::string bootblock_filename ;
+    std::string monitor_filename ;
+    std::string volume_info_filename ;
 
     // cache directory statistics
     unsigned		dir_file_count ; // # of files in the directory, without internal
@@ -193,13 +191,13 @@ public:
     rt11_blocknr_t	file_space_blocknr ; // start of file space area
     rt11_blocknr_t	render_free_space_blocknr ; // start of free space for renderer
 
-    static string make_filename(string basename, string ext) ;
+    static std::string make_filename(std::string basename, std::string ext) ;
 
     // low level operators
 private:
 
     // RT11 has no subdirectories
-    string get_filepath(file_base_c *f) override {
+    std::string get_filepath(file_base_c *f) override {
         return f->get_filename() ;
     }
 
@@ -207,32 +205,34 @@ private:
         return rootdir->file_count() ;
     }
 
-    uint16_t rt11_image_get_word_at(rt11_blocknr_t blocknr, uint32_t byte_offset) ;
-    void rt11_image_set_word_at(rt11_blocknr_t blocknr,  uint32_t byte_offset, uint16_t val) ;
-    void stream_parse(rt11_stream_c *stream, rt11_blocknr_t start, uint32_t byte_offset, uint32_t data_size) ;
-    void stream_render(rt11_stream_c *stream) ;
-    unsigned rt11_dir_entries_per_segment() ;
-    unsigned rt11_dir_needed_segments(unsigned file_count) ;
+    void stream_parse_blocks(rt11_stream_c *stream, rt11_blocknr_t start_block_nr, unsigned block_count) ;
+    void stream_parse_bytes(rt11_stream_c *stream, rt11_blocknr_t start_block_nr, uint8_t *data, unsigned byte_count) ;
+
+//    void stream_parse_blocks(rt11_stream_c *stream, rt11_blocknr_t start, uint32_t byte_offset, uint32_t data_size) ;
+//    void stream_render(rt11_stream_c *stream) ;
+    unsigned directory_entries_per_segment() ;
+    unsigned directory_needed_segments(unsigned file_count) ;
     void calc_file_stream_change_flag(        rt11_stream_c *stream) ;
-    void calc_file_change_flags() override  ;
-    void rt11_filesystem_calc_block_use(unsigned test_data_size) ;
+    void calc_change_flags() override  ;
+    void calc_block_use(unsigned test_data_size) ;
 
 
 private:
 
-    void parse_internal_blocks_to_file(string _basename, string _ext, uint32_t start_block_nr, uint32_t data_size) ;
-    void parse_homeblock() ;
+    void parse_internal_blocks_to_file(std::string _basename, std::string _ext, uint32_t start_block_nr, uint32_t data_size) ;
+    bool parse_homeblock() ;
     void parse_directory() ;
     void parse_file_data() ;
-    void parse_volumeinfo();
+
 public:
     void parse()   override ;
+    void produce_volume_info(std::stringstream &buffer) override ;
 
 
 private:
-    void rt11_filesystem_layout() ;
+    void calc_layout() ;
     void render_homeblock() ;
-    void render_directory_entry(block_cache_dec_c &cache, file_rt11_c *f, int ds_nr, int de_nr) ;
+    void render_directory_entry(byte_buffer_c &block_buffer, file_rt11_c *f, int ds_nr, int de_nr) ;
     void render_directory() ;
     void render_file_data() ;
 public:
@@ -242,25 +242,25 @@ public:
 public:
     file_rt11_c *file_get(int fileidx)    override;
 
-    string filename_from_host(string *hostfname, string *result_filnam, string *result_ext) override ;
+    std::string filename_from_host(std::string *hostfname, std::string *result_filnam, std::string *result_ext) override ;
 
-    bool stream_by_host_filename(string host_fname,
-                                 file_rt11_c **result_file, string *result_host_filename,
-                                 rt11_stream_c **result_stream, string *result_stream_code) ;
+    bool stream_by_host_filename(std::string host_fname,
+                                 file_rt11_c **result_file, std::string *result_host_filename,
+                                 rt11_stream_c **result_stream, std::string *result_stream_code) ;
 
     void import_host_file(file_host_c *host_file) override ;
-    void delete_host_file(string host_path) override ;
+    void delete_host_file(std::string host_path) override ;
 
 
     void sort() override ;
 
 private:
-    string rt11_date_text(struct tm t);
-    string rt11_dir_entry_text(file_rt11_c *f) ;
+    std::string rt11_date_text(struct tm t);
+    std::string rt11_dir_entry_text(file_rt11_c *f) ;
 public:
 
 
-    void print_dir(FILE *stream) override ;
+    void print_directory(FILE *stream) override ;
     void print_diag(FILE *stream) override;
 };
 

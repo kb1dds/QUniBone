@@ -26,8 +26,6 @@
 #ifndef _CPU_HPP_
 #define _CPU_HPP_
 
-using namespace std;
-
 #include "utils.hpp"
 #include "timeout.hpp"
 //#include "qunibusadapter.hpp"
@@ -75,7 +73,8 @@ public:
     }
 
     // readout non-destructive. to clear, use "clearConsumer()"
-    void dump(std::ostream *stream) {
+    void dump(std::ostream *stream) 
+    {
         qunibus_cycle_trace_entry_c *cte ;
         char buffer[256] ;
         timeval now ;
@@ -93,18 +92,19 @@ public:
     }
 
 
-    void dump(std::string filepath) {
+    void dump(std::string filepath) 
+    {
         std::ofstream file_stream;
         file_stream.open(filepath, std::ofstream::out | std::ofstream::trunc);
         if (!file_stream.is_open()) {
-            cout << "Can not open log file \"" << filepath << "\"! Aborting!\n";
+            std::cout << "Can not open log file \"" << filepath << "\"! Aborting!\n";
             exit(2);
         }
         size_t fill = readAvailable() ;
         dump(&file_stream);
 
         file_stream.close();
-        cout << "Dumped " << fill << " messages to file \"" << filepath << "\".\n";
+        std::cout << "Dumped " << fill << " messages to file \"" << filepath << "\".\n";
     }
 } ;
 
@@ -175,7 +175,7 @@ public:
     void worker(unsigned instance) override;
 
     // called by qunibusadapter on emulated register access
-    void on_after_register_access(qunibusdevice_register_t *device_reg, uint8_t unibus_control)
+    void on_after_register_access(qunibusdevice_register_t *device_reg, uint8_t unibus_control, DATO_ACCESS access)
     override;
 
     void on_interrupt(uint16_t vector);

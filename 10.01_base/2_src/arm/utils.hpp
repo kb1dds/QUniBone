@@ -30,6 +30,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <string>
 #include <algorithm> // TRIM_STRING
@@ -41,6 +42,13 @@
 
 #define BIT(n) (1 << (n))
 
+
+
+enum endianness_e {
+    endianness_little, // lsb first
+    endianness_pdp11, // DEC: word = LSB first, dword: 0x01020304 => 02, 01, 04, 03
+    endianness_big // msb first
+} ;
 
 
 #ifndef _UTILS_CPP_
@@ -56,6 +64,13 @@ void strcpy_s(char *dest, int len, const char *src);
 #define UNUSED(expr) do { (void)(expr); } while (0)
 
 #define USE(x) (void)(x)
+
+// string identifying source file and line
+// https://www.decompile.com/cpp/faq/file_and_line_error_string.htm
+#define STRINGIFY(x) #x    // a trick or de facto standard?
+#define TOSTRING(x) STRINGIFY(x)
+#define __FILE__LINE__ __FILE__ ":" TOSTRING(__LINE__)
+
 
 void SIGINTcatchnext();
 
@@ -89,6 +104,17 @@ public:
 unsigned random24(void);
 uint32_t random32_log(uint32_t limit);
 
+inline struct tm null_time()
+{
+	struct tm result ;
+	memset(&result, 0, sizeof(result)) ;
+	return result ;
+}
+
+bool is_leapyear(int y) ;
+extern int monthlen_noleapyear[12] ;
+extern int monthlen_leapyear[12] ;
+
 char *cur_time_text(void);
 
 // remove leading/trailing spaces
@@ -104,7 +130,7 @@ std::string rtrim_copy(std::string s) ;
 std::string trim_copy(std::string s) ;
 bool caseInsensStringCompare(std::string &str1, std::string &str2);
 
-char *printf_to_cstr(const char *fmt, ...) ;
+//char *printf_to_cstr(const char *fmt, ...) ;
 std::string printf_to_string(const char *fmt, ...) ;
 
 
@@ -132,7 +158,7 @@ uint16_t rad50_encode(std::string s);
 
 
 
-void hexdump(FILE *stream, uint8_t *data, int size, char *fmt, ...);
+void hexdump(std::ostream &stream, uint8_t *data, int size, const char *fmt, ...);
 
 
 //ool caseInsCompare(const std::string& s1, const std::string& s2) ;
